@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Market Shock Monitor v2</title>
+<style>
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --bg: #f4f5f7; --card-bg: #ffffff; --border: #dde1e6;
+    --text-primary: #14161a; --text-secondary: #4b5563; --text-muted: #6b7280;
+    --green: #22c55e; --green-dim: rgba(34,197,94,0.1); --green-glow: rgba(34,197,94,0.15);
+    --yellow: #f59e0b; --yellow-dim: rgba(245,158,11,0.1); --yellow-glow: rgba(245,158,11,0.15);
+    --red: #ef4444; --red-dim: rgba(239,68,68,0.1); --red-glow: rgba(239,68,68,0.15);
+    --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.1);
+    --cyan: #06b6d4; --cyan-dim: rgba(6,182,212,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; }
+  .brand-icon { width: 26px; height: 26px; }
+  .last-update { font-size: 13px; color: var(--text-muted); }
+  .page-loaded-at { font-size: 13px; color: var(--text-muted); padding-right: 10px; border-right: 1px solid var(--border); cursor: help; }
+  .refresh-btn { font-size: 13px; color: var(--blue); cursor: pointer; background: none; border: 1px solid rgba(59,130,246,0.2); padding: 4px 10px; border-radius: 6px; transition: all 0.15s; }
+  .refresh-btn:hover { background: var(--blue-dim); }
+  .refresh-btn.spinning { animation: spin 1s linear infinite; }
+  .refresh-status { font-size: 11px; color: var(--text-muted); }
+  .refresh-status.err { color: var(--red); }
+  .refresh-status.ok { color: var(--green); }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .signal-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+  .signal-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .signal-badge { font-size: 14px; font-weight: 700; padding: 7px 16px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-orange { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .signal-text { font-size: 16px; color: var(--text-secondary); line-height: 1.5; max-width: 500px; }
+  .signal-text strong { color: var(--text-primary); font-weight: 600; }
+  .signal-right { display: flex; align-items: center; gap: 14px; }
+  .signal-score { text-align: right; }
+  .signal-score-num { font-size: 34px; font-weight: 800; line-height: 1; }
+  .signal-score-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .signal-meter { width: 180px; height: 10px; background: #e7eaee; border-radius: 5px; overflow: hidden; }
+  .signal-fill { height: 100%; border-radius: 5px; transition: width 0.8s ease; }
+
+  .bias-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+  .bias-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .bias-badge { font-size: 14px; font-weight: 700; padding: 7px 16px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .bias-badge-bull { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .bias-badge-bull-strong { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .bias-badge-neutral { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+  .bias-badge-bear { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .bias-badge-bear-strong { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .bias-text { font-size: 16px; color: var(--text-secondary); line-height: 1.5; max-width: 500px; }
+  .bias-text strong { color: var(--text-primary); font-weight: 600; }
+  .bias-right { display: flex; align-items: center; gap: 14px; }
+  .bias-score { text-align: right; }
+  .bias-score-num { font-size: 34px; font-weight: 800; line-height: 1; }
+  .bias-score-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+  .bias-meter { width: 180px; height: 10px; background: #e7eaee; border-radius: 5px; overflow: hidden; position: relative; }
+  .bias-meter::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--text-muted); opacity: 0.3; z-index: 2; }
+  .bias-fill { height: 100%; border-radius: 5px; transition: width 0.8s ease, left 0.8s ease, background 0.3s ease; position: absolute; top: 0; }
+  .bias-fill.bull { left: 50%; background: var(--green); }
+  .bias-fill.bear { right: 50%; background: var(--red); }
+
+  .pulse-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: block; }
+  .pulse-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .pulse-status { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .pulse-status.live { color: var(--green); }
+  .pulse-status.error { color: var(--red); }
+  .pulse-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .pulse-item { background: #eef0f3; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; }
+  .pulse-item.error { border-color: rgba(239,68,68,0.2); }
+  .pulse-name { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .pulse-value { font-size: 20px; font-weight: 800; line-height: 1.2; }
+  .pulse-change { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .pulse-stale { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .moo-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+  .moo-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .moo-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .moo-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
+  .moo-status { font-size: 12px; color: var(--text-muted); }
+  .moo-status.set { color: var(--green); }
+  .moo-grid { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 8px; align-items: end; }
+  .moo-field { display: flex; flex-direction: column; gap: 3px; }
+  .moo-field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .moo-field input { background: #eef0f3; border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 7px 8px; font-size: 15px; font-family: var(--font); width: 100%; }
+  .moo-field input:focus { outline: none; border-color: var(--blue); }
+  .moo-btn { background: var(--blue-dim); border: 1px solid rgba(59,130,246,0.3); color: var(--blue); border-radius: 6px; padding: 7px 14px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 33px; }
+  .moo-paste-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+  .moo-paste-textarea { flex: 1; background: #0a0c10; border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 8px 10px; font-size: 13px; font-family: var(--font); resize: vertical; min-height: 44px; }
+  .moo-paste-textarea:focus { outline: none; border-color: var(--blue); }
+  .moo-paste-row .moo-btn { height: auto; align-self: stretch; }
+  .moo-paste-error { font-size: 12px; color: var(--red); margin: -4px 0 8px 0; min-height: 0; }
+  .moo-paste-note { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
+  @media (max-width: 640px) { .moo-paste-row { flex-direction: column; } }
+  .moo-btn:hover { background: rgba(59,130,246,0.2); }
+  @media (max-width: 640px) { .moo-grid { grid-template-columns: repeat(2, 1fr); } .moo-btn { grid-column: 1 / -1; } }
+
+  .breadth-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+  .breadth-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .breadth-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .breadth-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
+  .breadth-status { font-size: 12px; color: var(--text-muted); }
+  .breadth-status.live { color: var(--green); }
+  .breadth-status.error { color: var(--red); }
+  .breadth-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .breadth-ratio { font-size: 28px; font-weight: 800; }
+  .breadth-ratio-label { font-size: 13px; color: var(--text-muted); }
+  .breadth-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .breadth-item { background: #eef0f3; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+  .breadth-item-name { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .breadth-item-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+  .breadth-item-up { background: var(--green); }
+  .breadth-item-down { background: var(--red); }
+  .breadth-item-pct { font-size: 13px; font-weight: 700; }
+  @media (max-width: 640px) { .breadth-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .framework-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; margin: -8px 0 16px 0; font-size: 14px; }
+  .framework-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .framework-toggle-label { color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
+  .framework-toggle-arrow { color: var(--text-muted); transition: transform 0.15s; font-size: 12px; }
+  .framework-box.open .framework-toggle-arrow { transform: rotate(180deg); }
+  .framework-body { display: none; padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border); }
+  .framework-box.open .framework-body { display: block; }
+  .framework-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
+  .framework-row:last-of-type { border-bottom: none; }
+  .framework-range { min-width: 90px; font-weight: 700; font-family: var(--font); flex-shrink: 0; }
+  .framework-meaning { color: var(--text-secondary); line-height: 1.5; }
+  .framework-arrow-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+
+  /* NAAIM SECTION START — see fetch-naaim.yml header for removal instructions */
+  .naaim-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+  .naaim-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .panel-source-link { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue); text-decoration: none; }
+  .panel-source-link:hover { text-decoration: underline; }
+  .panel-source-link svg { width: 11px; height: 11px; }
+  .naaim-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .naaim-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
+  .naaim-status { font-size: 12px; color: var(--text-muted); }
+  .naaim-status.live { color: var(--green); }
+  .naaim-status.error { color: var(--red); }
+  .naaim-body { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .naaim-value { font-size: 32px; font-weight: 800; }
+  .naaim-value-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .naaim-how-to-read { font-size: 11px; color: var(--text-primary); margin-top: 8px; max-width: 260px; line-height: 1.5; padding: 6px 8px; background: rgba(59,130,246,0.06); border-left: 2px solid var(--blue); border-radius: 3px; }
+  .naaim-zone-bar { flex: 1; min-width: 200px; }
+  .naaim-zone-track { position: relative; height: 8px; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 6px; }
+  .naaim-zone-green { background: var(--green); flex: 35; }
+  .naaim-zone-yellow { background: var(--yellow); flex: 40; }
+  .naaim-zone-red { background: var(--red); flex: 25; }
+  .naaim-zone-marker { position: absolute; top: -3px; width: 3px; height: 14px; background: var(--text-primary); border-radius: 2px; }
+  .naaim-zone-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
+  .naaim-deprecation-note { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+  /* NAAIM SECTION END */
+
+  /* GOLD SECTION START — informational only, not scored. See fetch-gold.yml header for removal. */
+  .gold-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+  .gold-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .gold-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .gold-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
+  .gold-status { font-size: 12px; color: var(--text-muted); }
+  .gold-status.live { color: var(--green); }
+  .gold-status.error { color: var(--red); }
+  .gold-body { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+  .gold-price { font-size: 28px; font-weight: 800; }
+  .gold-change { font-size: 14px; font-weight: 700; }
+  .gold-trend-row { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  .gold-note { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+  /* GOLD SECTION END */
+
+  .signpost-list { display: flex; flex-wrap: wrap; gap: 6px; margin: -10px 0 16px 0; }
+  .signpost-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: opacity 0.15s; }
+  .signpost-chip:hover { opacity: 0.8; }
+  .signpost-chip.level { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+  .signpost-chip.trend { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+  .signpost-chip.both { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.4); font-weight: 700; }
+  .signpost-chip.collapse { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.4); font-weight: 700; }
+  .signpost-empty { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 4px 0 12px 0; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { padding: 7px 16px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all 0.15s; }
+  .tab:hover { background: #e7eaee; color: var(--text-secondary); }
+  .tab.active { background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; overflow: hidden; }
+  .card:hover { border-color: #c7ccd3; transform: translateY(-1px); }
+  .card.hidden { display: none; }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+  .card-title-wrap { display: flex; align-items: center; gap: 8px; }
+  .card-icon { width: 18px; height: 18px; color: var(--text-muted); flex-shrink: 0; }
+  .card-title { font-size: 16px; font-weight: 700; }
+  .card-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .card-value-row { display: flex; align-items: baseline; gap: 10px; margin: 8px 0; }
+  .card-value { font-size: 32px; font-weight: 800; line-height: 1.1; }
+  .card-change { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+  .card-change svg { width: 14px; height: 14px; }
+  .card-sparkline { width: 100%; height: 36px; margin-top: 4px; }
+  .th-strip { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 12px; margin-bottom: 4px; position: relative; }
+  .th-green-bg { background: var(--green); opacity: 0.2; flex: 1; }
+  .th-yellow-bg { background: var(--yellow); opacity: 0.2; flex: 1; }
+  .th-red-bg { background: var(--red); opacity: 0.2; flex: 1; }
+  .th-marker { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--card-bg); transform: translateX(-50%); transition: left 0.5s ease; }
+  .th-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .th-current { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .th-current strong { color: var(--text-primary); font-weight: 600; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border); }
+  .severity { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+  .sev-low { background: var(--green-dim); color: var(--green); }
+  .sev-med { background: var(--yellow-dim); color: var(--yellow); }
+  .sev-high { background: var(--red-dim); color: var(--red); }
+  .data-age { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+  .cadence-note { font-size: 11px; color: var(--text-muted); margin-left: 6px; opacity: 0.75; }
+  .data-age.stale { color: var(--yellow); }
+  .data-age.fresh { color: var(--green); }
+  .source-link { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; text-decoration: none; }
+  .source-link:hover { color: var(--blue); }
+  .source-link svg { width: 12px; height: 12px; }
+  .change-up { color: var(--green); } .change-down { color: var(--red); } .change-neutral { color: var(--text-muted); }
+
+  .zone-strip { display: flex; gap: 4px; margin: 8px 0; flex-wrap: wrap; }
+  .zone-pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; color: var(--bg); text-transform: uppercase; letter-spacing: 0.3px; transition: opacity 0.2s; }
+
+  .fomc { grid-column: 1 / -1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+  .fomc-left { display: flex; align-items: center; gap: 12px; }
+  .fomc-icon { width: 32px; height: 32px; }
+  .fomc-title { font-size: 17px; font-weight: 700; }
+  .fomc-sub { font-size: 14px; color: var(--text-muted); }
+  .fomc-links { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
+  .fomc-links a { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--blue); text-decoration: none; }
+  .fomc-links a:hover { text-decoration: underline; }
+  .fomc-links a svg { width: 12px; height: 12px; }
+  .countdown { display: flex; gap: 14px; align-items: center; }
+  .cd-box { text-align: center; min-width: 52px; }
+  .cd-num { font-size: 28px; font-weight: 800; line-height: 1; }
+  .cd-label { font-size: 12px; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; }
+  .cd-sep { font-size: 24px; color: var(--text-muted); font-weight: 300; margin-top: -8px; }
+
+  .detail { grid-column: 1 / -1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 4px; display: none; }
+  .detail.open { display: block; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .detail-title { font-size: 19px; font-weight: 700; }
+  .detail-close { cursor: pointer; padding: 6px; border-radius: 8px; color: var(--text-muted); }
+  .detail-close:hover { color: var(--text-primary); background: #e7eaee; }
+  .detail-close svg { width: 20px; height: 20px; }
+  .detail-chart { width: 100%; height: 180px; border-radius: 8px; background: #eef0f3; }
+  .detail-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; margin-top: 14px; }
+  .detail-source { margin-top: 10px; font-size: 14px; }
+  .detail-source a { color: var(--blue); text-decoration: none; }
+  .detail-source a:hover { text-decoration: underline; }
+  .detail-zones { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .dz-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+  .dz-row { display: flex; align-items: center; gap: 10px; font-size: 15px; margin-bottom: 6px; padding: 7px 12px; border-radius: 6px; }
+  .dz-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dz-label { font-weight: 700; min-width: 100px; }
+  .dz-val { color: var(--text-secondary); flex: 1; }
+  .dz-next { font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .dz-methodology { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; padding: 10px 12px; background: #eef0f3; border-radius: 6px; border-left: 3px solid var(--blue); }
+  .dz-legend { font-size: 13px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+  .info-banner { background: var(--blue-dim); border: 1px solid rgba(59,130,246,0.15); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; }
+  .glance-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+  .glance-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; display: flex; flex-direction: column; gap: 5px; min-height: 92px; }
+  .glance-card:hover { border-color: var(--blue); transform: translateY(-1px); }
+  .glance-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+  .glance-question { text-transform: none; font-weight: 400; letter-spacing: normal; color: var(--text-muted); }
+  .glance-value { font-size: 21px; font-weight: 800; line-height: 1.1; }
+  .glance-sub { font-size: 13px; font-weight: 600; }
+  @media (max-width: 900px) { .glance-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .glance-row { grid-template-columns: repeat(2, 1fr); } }
+  .back-to-top-btn { position: fixed; bottom: 24px; right: 24px; z-index: 100; background: var(--blue); color: #fff; border: none; border-radius: 50%; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.15); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.15s; }
+  .back-to-top-btn.visible { opacity: 1; pointer-events: auto; }
+  .back-to-top-btn:hover { transform: translateY(-2px); }
+  .back-to-top-btn svg { width: 20px; height: 20px; }
+  .section-heading { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 12px 0; }
+  .section-heading:first-of-type { margin-top: 4px; }
+  .section-heading h2 { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-primary); margin: 0; }
+  .section-heading .section-heading-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
+  .section-heading .section-heading-line { flex: 1; height: 1px; background: var(--border); }
+  .info-text { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
+  .info-text strong { color: var(--blue); }
+  .info-text a { color: var(--blue); text-decoration: none; }
+  .info-text a:hover { text-decoration: underline; }
+
+  .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.3s; }
+  .loading-overlay.done { opacity: 0; pointer-events: none; }
+  .loading-text { font-size: 16px; color: var(--text-muted); }
+
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; } .card-value { font-size: 28px; }
+    .signal-bar, .bias-bar { flex-direction: column; align-items: flex-start; }
+    .signal-right, .bias-right { width: 100%; justify-content: space-between; }
+    .pulse-grid { grid-template-columns: repeat(2, 1fr); }
+    .signal-meter, .bias-meter { width: 140px; }
+  }
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loader"><div class="loading-text">Loading market data...</div></div>
+<div class="container">
+  <div class="header">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      US Market Shock Monitor <span style="font-size:0.55em;padding:2px 8px;border-radius:6px;background:#eef2ff;color:#4338ca;vertical-align:middle">v2 · test</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="page-loaded-at" id="pageLoadedAt" title="When this page was last loaded/refreshed in your browser - not the same as how fresh the underlying data is, see each panel's own status for that">loading...</div>
+      <div class="last-update" id="lastUpdate">loading...</div>
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()" title="Refresh all data">↻ Refresh</button>
+      <span class="refresh-status" id="refreshStatus"></span>
+    </div>
+  </div>
+
+  <div class="glance-row" id="glanceRow">
+    <div class="glance-card" onclick="scrollToSection('partIHeading')">
+      <span class="glance-label">Part I <span class="glance-question">— is macro cracking?</span></span>
+      <span class="glance-value" id="glancePartIValue">--</span>
+      <span class="glance-sub" id="glancePartIBadge">loading</span>
+    </div>
+    <div class="glance-card" onclick="scrollToSection('partIIHeading')">
+      <span class="glance-label">Part II <span class="glance-question">— red day?</span></span>
+      <span class="glance-value" id="glancePartIIValue">--</span>
+      <span class="glance-sub" id="glancePartIIBadge">loading</span>
+    </div>
+    <div class="glance-card" onclick="scrollToSection('naaimBar')">
+      <span class="glance-label">NAAIM</span>
+      <span class="glance-value" id="glanceNaaimValue">--</span>
+      <span class="glance-sub" id="glanceNaaimSub">loading</span>
+    </div>
+    <div class="glance-card" onclick="scrollToSection('goldBar')">
+      <span class="glance-label">Gold (GC=F)</span>
+      <span class="glance-value" id="glanceGoldValue">--</span>
+      <span class="glance-sub" id="glanceGoldSub">loading</span>
+    </div>
+    <div class="glance-card" onclick="scrollToSection('btcBar')">
+      <span class="glance-label">Bitcoin</span>
+      <span class="glance-value" id="glanceBtcValue">--</span>
+      <span class="glance-sub" id="glanceBtcSub">loading</span>
+    </div>
+  </div>
+
+  <!-- MOO IMBALANCE — manual entry, not auto-fetched. See index.html comments for why. -->
+  <div class="moo-bar" id="mooBar">
+    <div class="moo-title-row">
+      <span class="moo-title">MOO imbalance <span class="moo-sub">(paste the whole block from your source, ~9:20-9:30am ET / ~9:20-9:30pm SGT — feeds bias score)</span></span>
+      <span class="moo-status" id="mooStatus">not entered yet</span>
+    </div>
+    <div class="moo-paste-row">
+      <textarea id="moo-paste-input" class="moo-paste-textarea" rows="2" placeholder="Paste the whole block here, e.g.&#10;S&P 500: 1616.2 MLN  Nasdaq 100: 816.4 MLN  Dow 30: 720.6 MLN  Mag 7: 300.9 MLN"></textarea>
+      <button class="moo-btn" onclick="parseMOOPaste()">Paste → fill &amp; update</button>
+    </div>
+    <div class="moo-paste-error" id="mooPasteError"></div>
+    <div class="moo-grid">
+      <div class="moo-field"><label>S&P 500 (mln)</label><input type="number" step="0.1" id="moo-sp500" placeholder="e.g. 164.5"></div>
+      <div class="moo-field"><label>Nasdaq 100 (mln)</label><input type="number" step="0.1" id="moo-ndx" placeholder="e.g. -42.7"></div>
+      <div class="moo-field"><label>Dow 30 (mln)</label><input type="number" step="0.1" id="moo-dow" placeholder="e.g. -22.1"></div>
+      <div class="moo-field"><label>Mag 7 (mln)</label><input type="number" step="0.1" id="moo-mag7" placeholder="e.g. -41.4"></div>
+      <button class="moo-btn" onclick="updateMOOImbalance()">Update &amp; recalc bias</button>
+    </div>
+    <div class="moo-paste-note">The fields above still work individually if you'd rather type them, or if paste parsing misreads something — check the numbers landed correctly before hitting "Update".</div>
+  </div>
+
+  <div class="info-banner" id="infoBanner">
+    <div class="info-text">
+      <strong>Part I answers: "Are we in a risky macro regime?"</strong> — Use for strategic positioning (cash, hedges) over 2–4 weeks. FRED data has 1-day lag.<br>
+      <strong>Part II answers: "Is today likely to open higher or lower?"</strong> — Use for tactical entry/exit timing. Real-time data from Yahoo Finance.<br>
+      Click any card to see its signal framework. Data refreshes automatically.
+    </div>
+  </div>
+
+
+  <div class="section-heading" id="partIHeading"><h2>Part I — Macro Regime</h2><span class="section-heading-sub">strategic, 2-4 week horizon — FRED data, 1-day lag</span><div class="section-heading-line"></div></div>
+  <div class="signal-bar" id="signalBar">
+    <div class="signal-left">
+      <span class="signal-badge badge-orange" id="mainBadge">reduce risk</span>
+      <span class="signal-text">signposts triggered <strong id="mainScore">6/14</strong> — <strong id="mainAction">raise cash to 20-30%, avoid new equity positions</strong></span>
+    </div>
+    <div class="signal-right">
+      <div class="signal-score">
+        <div class="signal-score-num" id="mainNum">6/14</div>
+        <div class="signal-score-label">signposts</div>
+      </div>
+      <div class="signal-meter"><div class="signal-fill" id="mainFill" style="width:43%;background:var(--yellow)"></div></div>
+    </div>
+  </div>
+
+  <div class="signpost-list" id="signpostList"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-cat="all">all indicators</button>
+    <button class="tab" data-cat="sentiment">sentiment</button>
+    <button class="tab" data-cat="rates">rates & fed</button>
+    <button class="tab" data-cat="macro">macro</button>
+    <button class="tab" data-cat="fiscal">fiscal</button>
+    <button class="tab" data-cat="commodities">commodities</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="fomc" data-cat="rates">
+      <div class="fomc-left">
+        <svg class="fomc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>
+          <div class="fomc-title">next FOMC meeting</div>
+          <div class="fomc-sub" id="fomcSub">federal reserve policy decision — loading…</div>
+          <div class="fomc-links">
+            <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> FOMC calendar &amp; statements</a>
+            <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> rate decision probabilities (CME FedWatch)</a>
+          </div>
+        </div>
+      </div>
+      <div class="countdown" id="fomcCountdown">
+        <div class="cd-box"><div class="cd-num" id="cdDays">--</div><div class="cd-label">days</div></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box"><div class="cd-num" id="cdHours">--</div><div class="cd-label">hours</div></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box"><div class="cd-num" id="cdMins">--</div><div class="cd-label">mins</div></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="framework-box open" id="frameworkPartI" onclick="toggleFramework('frameworkPartI')">
+    <div class="framework-toggle">
+      <span class="framework-toggle-label">▸ signal framework — how the signpost count works (backtested)</span>
+      <span class="framework-toggle-arrow">▾</span>
+    </div>
+    <div class="framework-body">
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">&lt;20% triggered — accumulate</span><span class="framework-meaning">Few indicators flashing. Overweight equities, buy dips aggressively.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">20–39% — maintain</span><span class="framework-meaning">A handful of signposts firing, not yet broad-based. Hold positions, add hedges (puts/VIX calls).</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--orange, #f97316)">40–59% — reduce risk</span><span class="framework-meaning">Close to half of all signposts triggered. Raise cash to 20–30%, avoid new equity positions.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">60%+ — derisk</span><span class="framework-meaning">Broad-based, majority of signposts triggered. Sell aggressively, raise cash &gt;50%, go defensive.</span></div>
+      <div class="framework-arrow-note">
+        Each indicator triggers on LEVEL (in its own red zone), TREND (moved fast toward red recently, off real historical FRED values), or for VIX and treasury yields specifically, a third condition tuned for crash detection - see below. Either firing counts as triggered; the number shown is a straight count, not a blended average.
+        <strong style="color:var(--text-primary)">Backtested against 2015-2026 (2,902 trading days, re-run July 2026 with publication-lag-aware, as-of-date data):</strong> the composite was re-validated against all 9 SPY drawdowns of 8%+ in the window. Slow, regime-driven events are detected well: 2015-16 growth scare peaked at 46%, COVID at 54%, and the 2022 bear market at 54%, against a calm-day median of 15% - readings of 40%+ occurred on only 0.9% of calm days, and 60%+ never occurred outside a genuine event. This re-run also caught and fixed three scoring bugs the previous version shipped with: CPI was scored on its raw index level against YoY-percentage zones (permanently triggered), the dollar index was scored on the broad DTWEXBGS scale against zones calibrated for ICE DXY (triggered on 94% of all days), and the treasury flight-to-safety collapse check referenced series that were never actually scored (dead code - now live via the two treasury tiles). Membership changes from the re-run: VIX term structure and NFCI promoted into the count (see their cards), credit spreads demoted to context (source data truncated at FRED; NFCI covers the same conditions channel with 50+ years of history), jobless claims and put/call evaluated and rejected (claims LAG equity corrections - 0.4x lift; put/call has a 2019-2026 data hole).
+        <strong style="color:var(--text-primary)">Known, honest limitation:</strong> fast vol-shock corrections - Feb 2018, Q4 2018, Aug 2024, Feb-Apr 2025 - peak at only ~23% under this model. That is not a calibration miss; it is structural. A count of mostly-macro indicators cannot turn red in two weeks. This composite is a REGIME gauge: it tells you when the environment is fragile (2015-16, 2020, 2022 all crossed 40%), not when a crash starts. The two fastest inputs (VIX stress zones, VIX term structure) are the only ones that move intra-correction - watch those cards directly, and Part II below, for anything faster than a regime shift. Prior published figures (72.7% COVID peak, 2,896 days) could not be reproduced under the production scoring logic and are superseded by this run.
+        This is a 2–4 week strategic read (FRED data has a 1-day lag) — it answers "are we in a risky regime," not "what happens today." For that, see Part II below.
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="section-heading" id="partIIHeading"><h2>Part II — Pre-Market Bias</h2><span class="section-heading-sub">tactical, today's session — Yahoo Finance, near-real-time</span><div class="section-heading-line"></div></div>
+
+  <div class="bias-bar" id="biasBar">
+    <div class="bias-left">
+      <span class="bias-badge bias-badge-neutral" id="biasBadge">neutral</span>
+      <span class="bias-text">pre-market bias score <strong id="biasScore">0</strong> — <strong id="biasAction">wait for first hour confirmation before sizing</strong></span>
+    </div>
+    <div class="bias-right">
+      <div class="bias-score">
+        <div class="bias-score-num" id="biasNum">0</div>
+        <div class="bias-score-label">bias score</div>
+      </div>
+      <div class="bias-meter" id="biasMeter"><div class="bias-fill" id="biasFill" style="width:0%;background:var(--yellow)"></div></div>
+    </div>
+  </div>
+
+  <div class="framework-box open" id="frameworkPartII" onclick="toggleFramework('frameworkPartII')">
+    <div class="framework-toggle">
+      <span class="framework-toggle-label">▸ signal framework — how the pre-market bias score works</span>
+      <span class="framework-toggle-arrow">▾</span>
+    </div>
+    <div class="framework-body">
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">0–15 strong bear</span><span class="framework-meaning">Futures down + VIX up, one-sided. Reduce risk, raise cash, add hedges.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">16–39 bearish</span><span class="framework-meaning">Futures net negative. Favor shorts, tighten stops on longs.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">40–60 neutral</span><span class="framework-meaning">Mixed or weak signals. Wait for first-hour confirmation before sizing either direction.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">61–69 bullish</span><span class="framework-meaning">Futures net positive. Favor longs, tighten stops on shorts.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">70–100 strong bull</span><span class="framework-meaning">Futures up + VIX down, one-sided. Consider adding risk, size up longs.</span></div>
+      <div class="framework-arrow-note">
+        Built from a weighted average of ES/NQ/YM/RTY futures, VIX, DXY, WTI, MOO imbalance (if entered), and the buy/sell volume proxy (once available) — each contributes a -3..+3 signal scaled to its own extreme threshold, weighted by conviction (futures highest, breadth-type signals lower). 50 = neutral. Watch the direction of travel, not just the current bucket: a score climbing from 45→58 is a different signal than one sitting flat at 58.
+        <strong style="color:var(--text-primary)">Backtested against 2018-2026 (2,140 trading days, using each future's daily Open vs. prior Close as a proxy for a premarket snapshot - free intraday history only goes back ~30 days, so this can't replicate your exact 8pm SGT timing, but it's the closest available):</strong> correlation between this score and SPY's actual next-day gap is 0.555 - a genuinely strong number for a next-period equity signal. Hit rates outside the neutral zone run 78-96%. The old 85 "strong bull" threshold was recalibrated to 70 after backtesting showed 85 was set above the 99th percentile of 8.5 years of readings (only 13 of 2,140 days ever reached it) - 70 captures roughly the top 2.2% of readings, closer to symmetric with how often strong bear already fires. The weights themselves (why ES=F carries more weight than DXY, etc.) were tested against several alternative allocations including ones informed by each input's individual correlation with SPY's gap - every alternative performed worse than what's live now, so the weights were left unchanged rather than "improved" on paper.
+        The model is silent (neutral) on roughly 74% of days - that's expected, not a malfunction, since most sessions don't have a strong directional signal.
+        This is a same-session tactical read (minutes-to-hours), not the multi-week regime read in Part I above — the two can and often do disagree, and that's informative, not a bug.
+      </div>
+    </div>
+  </div>
+
+  <div class="pulse-bar" id="pulseBar">
+    <div class="pulse-title">
+      <span>pre-market pulse — real-time market data</span>
+      <span class="pulse-status" id="pulseStatus">connecting...</span>
+    </div>
+    <div class="pulse-grid" id="pulseGrid">
+      <div class="pulse-item" id="pulse-es"><div class="pulse-name">S&P 500 Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-nq"><div class="pulse-name">NASDAQ Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-ym"><div class="pulse-name">Dow Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-rty"><div class="pulse-name">Russell 2000</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-vix"><div class="pulse-name">VIX Spot</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-tnx"><div class="pulse-name">10Y Yield</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-dxy"><div class="pulse-name">US Dollar</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-cl"><div class="pulse-name">WTI Crude</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+    </div>
+  </div>
+
+
+  <!-- BUY/SELL VOLUME PROXY — fully automated, no manual entry. See fetch-breadth.yml.
+       Method: 1-min bars for SPY/QQQ/DIA/IWM classified up/down by close vs prior close.
+       This is a bar-direction proxy, NOT tick-level aggressor-side (Lee-Ready) volume -
+       that needs paid NBBO quote data. Labeled clearly below so it's never mistaken for it. -->
+  <div class="breadth-bar" id="breadthBar">
+    <div class="breadth-title-row">
+      <span class="breadth-title">buy/sell volume proxy <span class="breadth-sub">(auto, 1-min bar direction — SPY/QQQ/DIA/IWM, first 4 trading hours)</span></span>
+      <span class="breadth-status" id="breadthStatus">loading...</span>
+    </div>
+    <div class="breadth-summary">
+      <span class="breadth-ratio" id="breadthRatio">--</span>
+      <span class="breadth-ratio-label">up-volume : down-volume ratio</span>
+    </div>
+    <div class="breadth-grid" id="breadthGrid">
+      <div class="breadth-item" id="breadth-SPY"><div class="breadth-item-name">S&P 500 (SPY)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-QQQ"><div class="breadth-item-name">Nasdaq 100 (QQQ)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-DIA"><div class="breadth-item-name">Dow 30 (DIA)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-IWM"><div class="breadth-item-name">Russell 2000 (IWM)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+    </div>
+  </div>
+
+
+  <div class="section-heading"><h2>Reference Points</h2><span class="section-heading-sub">informational only — NAAIM, gold, and bitcoin below are context, not scored into Part I or Part II</span><div class="section-heading-line"></div></div>
+  <!-- NAAIM SECTION START — see fetch-naaim.yml header for full removal instructions -->
+  <div class="naaim-bar" id="naaimBar">
+    <div class="naaim-title-row">
+      <span class="naaim-title">NAAIM active manager positioning <span class="naaim-sub">(weekly, contrarian read — auto, free until Aug 1 2026)</span> <a class="panel-source-link" href="https://naaim.org/programs/naaim-exposure-index/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> naaim.org</a></span>
+      <span class="naaim-status" id="naaimStatus">loading...</span>
+    </div>
+    <div class="naaim-body">
+      <div>
+        <div class="naaim-value" id="naaimValue">--</div>
+        <div class="naaim-value-label">avg equity exposure</div>
+        <div class="naaim-value-label" id="naaimTrend" style="margin-top:4px;"></div>
+        <div class="naaim-how-to-read" id="naaimHowToRead">↑ = more crowded/bullish positioning. Read this LIKE VIX, not like a normal risk gauge: extreme HIGH = euphoria = contrarian derisk warning. Extreme LOW = capitulation = contrarian buy signal. The MIDDLE is calm, not either extreme.</div>
+      </div>
+      <div class="naaim-zone-bar">
+        <div class="naaim-zone-track" id="naaimZoneTrack">
+          <div class="naaim-zone-green"></div><div class="naaim-zone-yellow"></div><div class="naaim-zone-red"></div>
+          <div class="naaim-zone-marker" id="naaimMarker" style="left:50%"></div>
+        </div>
+        <div class="naaim-zone-labels"><span>&lt;20 defensive</span><span>20–100 normal</span><span>&gt;100 euphoric</span></div>
+      </div>
+    </div>
+
+    <div class="framework-box open" id="frameworkNAAIM" onclick="toggleFramework('frameworkNAAIM')">
+      <div class="framework-toggle">
+        <span class="framework-toggle-label">▸ signal framework — how to read this number</span>
+        <span class="framework-toggle-arrow">▾</span>
+      </div>
+      <div class="framework-body">
+        <div class="framework-row"><span class="framework-range" style="color:var(--green)">below 20</span><span class="framework-meaning">Managers defensive/net short. Contrarian BUY signal — capitulation, pessimism extreme.</span></div>
+        <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">20 – 100</span><span class="framework-meaning">Normal range. Not informative either direction — most historical readings sit here.</span></div>
+        <div class="framework-row"><span class="framework-range" style="color:var(--red)">above 100</span><span class="framework-meaning">Managers heavily long/crowded. Contrarian DERISK signal — euphoria, everyone's already in.</span></div>
+        <div class="framework-arrow-note">
+          This is NOT a monotonic risk gauge like VIX-level or credit spreads elsewhere in this dashboard, where higher always means more danger. It's U-shaped: risk reads come from either EXTREME, not from the number simply going up. A reading of 83 is in the normal 20–100 band — elevated within that band, but not the euphoric extreme (&gt;100) that would trigger a contrarian derisk read.
+          Thresholds (20 / 100) are a judgment call based on NAAIM's own historical range (all-time low ≈ -3.6, all-time high ≈ 120.6, mean ≈ 65) — not backtested the way Part I's signposts were.
+        </div>
+      </div>
+    </div>
+    <div class="naaim-deprecation-note">NAAIM announced this data moves to subscription access on Aug 1, 2026 — this panel will show "unavailable" after that date unless a paid source replaces it.</div>
+  </div>
+  <!-- NAAIM SECTION END -->
+
+  <!-- GOLD SECTION START — informational only, not scored. See fetch-gold.yml header for removal. -->
+  <div class="gold-bar" id="goldBar">
+    <div class="gold-title-row">
+      <span class="gold-title">gold futures (GC=F) <span class="gold-sub">— reference point for both parts, not scored</span> <a class="panel-source-link" href="https://finance.yahoo.com/quote/GC=F/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> finance.yahoo.com/GC=F</a></span>
+      <span class="gold-status" id="goldStatus">loading...</span>
+    </div>
+    <div class="gold-body">
+      <div class="gold-price" id="goldPrice">--</div>
+      <div class="gold-change" id="goldChange">--</div>
+      <div class="gold-trend-row">
+        <span id="gold5d">5d: --</span>
+        <span id="gold20d">20d: --</span>
+      </div>
+    </div>
+    <div class="gold-note">Futures (not the GLD ETF) so overnight moves show up for Part II's "today" question, not just US market-hours moves. Backtested against 2018 Q4, COVID, and 2022: gold worked as a hedge in only 1 of those 3 stress events (rallied +6.6% in 2018, but fell in both COVID's liquidity panic and the 2022 rate-driven selloff). Not reliable enough to score as a signpost — shown here as context for both Part I and Part II, not signal.</div>
+  </div>
+  <!-- GOLD SECTION END -->
+
+  <!-- BITCOIN SECTION START — informational only, not scored. See fetch-crypto.yml header for removal. -->
+  <div class="gold-bar" id="btcBar">
+    <div class="gold-title-row">
+      <span class="gold-title">bitcoin (BTC-USD) <span class="gold-sub">— reference point for both parts, not scored</span> <a class="panel-source-link" href="https://finance.yahoo.com/quote/BTC-USD/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> finance.yahoo.com/BTC-USD</a></span>
+      <span class="gold-status" id="btcStatus">loading...</span>
+    </div>
+    <div class="gold-body">
+      <div class="gold-price" id="btcPrice">--</div>
+      <div class="gold-change" id="btcChange">--</div>
+      <div class="gold-trend-row">
+        <span id="btc5d">5d: --</span>
+        <span id="btc20d">20d: --</span>
+      </div>
+    </div>
+    <div class="gold-note">Trades 24/7, so this reflects true overnight moves for Part II too. Backtested against the same 3 stress events as gold: BTC fell HARDER than SPY in every single one (-38.1% vs SPY -19.7% in 2018 Q4, -33.4% vs -34.1% in COVID, -58.8% vs -25.4% in 2022). This is not a hedge — it behaves like a high-beta risk asset that often amplifies the same move equities make. Shown as reference only; never read this as a safe-haven confirmation the way gold sometimes can be.</div>
+  </div>
+  <!-- BITCOIN SECTION END -->
+
+  <div class="detail" id="detailPanel">
+    <div class="detail-header">
+      <div class="detail-title" id="detailTitle">indicator detail</div>
+      <div class="detail-close" onclick="closeDetail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <svg class="detail-chart" id="detailChart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+    <div class="detail-desc" id="detailDesc"></div>
+    <div class="detail-source" id="detailSource"></div>
+    <div class="detail-zones" id="detailZones"></div>
+  </div>
+</div>
+<script>
+// v2 reads ALL data from v1's published files - no secrets or schedulers needed here,
+// and v1/v2 always see identical inputs, so any difference between them is code-only.
+const DATA_BASE = 'https://moopheus1.github.io/US-Market-Shock-Monitor/data/';
+
+
+// =========================================================
+// CONFIG & UTILS
+// =========================================================
+
+const FRED_CONFIG = {
+  vix: { file: 'vix.json', decimals: 2, prefix: '', suffix: '', zones: { green: [30, 100], yellow: [15, 30], red: [0, 15] }, invertChange: true },
+  // Card zones recalibrated 2026-07: the feed is DTWEXBGS (broad trade-weighted index,
+  // ~120 today) but the old zones [100/108] were calibrated for the ICE DXY futures
+  // scale (~100 today) - a different index. Result: card sat permanently red (backtest
+  // showed 93.8% of ALL days triggered). Signposts use YoY change instead (see
+  // SIGNPOST_YOY_ZONES) - backtested lift 2.4x.
+  dxy: { file: 'dxy.json', decimals: 2, prefix: '', suffix: '', zones: { green: [0, 115], yellow: [115, 122], red: [122, 150] } },
+  yield10y2y: { file: 'yield10y2y.json', decimals: 2, prefix: '', suffix: '%', zones: { green: [1.0, 5.0], yellow: [-0.5, 1.0], red: [-2.0, -0.5] } },
+  oil: { file: 'oil.json', decimals: 2, prefix: '$', suffix: '', zones: { green: [55, 75], yellow: [75, 90], red: [0, 40] }, redUpper: 100 },
+  cpi: { file: 'cpi.json', decimals: 1, prefix: '', suffix: '%', yoy: true, zones: { green: [0, 2.5], yellow: [2.5, 4.0], red: [4.0, 10.0] } },
+  unemployment: { file: 'unemployment.json', decimals: 1, prefix: '', suffix: '%', zones: { green: [0, 3.5], yellow: [3.5, 5.0], red: [5.0, 15.0] } },
+  credit: { file: 'credit.json', decimals: 2, prefix: '', suffix: '%', zones: { green: [0, 1.5], yellow: [1.5, 3.5], red: [3.5, 10.0] } },
+  fedbal: { file: 'fedbal.json', decimals: 1, prefix: '$', suffix: 'T', divide: 1000000, zones: { green: [0, 7.5], yellow: [7.5, 8.5], red: [8.5, 15.0] } },
+  consumer: { file: 'consumer.json', decimals: 1, prefix: '', suffix: '', zones: { green: [110, 150], yellow: [80, 110], red: [0, 80] } },
+  treasury10y: { file: 'treasury10y.json', decimals: 2, prefix: '', suffix: '%', zones: { green: [0, 4.25], yellow: [4.25, 5.25], red: [5.25, 10.0] } },
+  treasury2y: { file: 'treasury2y.json', decimals: 2, prefix: '', suffix: '%', zones: { green: [0, 4.0], yellow: [4.0, 5.0], red: [5.0, 10.0] } },
+  m2: { file: 'm2.json', decimals: 1, prefix: '$', suffix: 'T', divide: 1000, zones: { green: [22, 100], yellow: [18, 22], red: [0, 18] } },
+  // Value here is a PERCENTILE RANK (0-100) computed server-side in fetch-cot.yml, not
+  // a raw price/level - "how crowded is net long S&P 500 futures positioning relative
+  // to its own 16-year history." Backtested: >=90th percentile sat at the 98th
+  // percentile right before the 2018 Q4 selloff, the one stress event nothing else in
+  // this dashboard's signpost model has ever caught. Did NOT flag COVID (67th
+  // percentile beforehand) - expected, COVID was an exogenous shock, not a positioning
+  // unwind. This is a slower, multi-week/quarter signal (forward-return test showed
+  // real predictive value at 12 weeks, not 4) - don't expect it to move often.
+  cot: { file: 'cot.json', decimals: 0, prefix: '', suffix: 'th %ile', zones: { green: [0, 75], yellow: [75, 90], red: [90, 100] } },
+  // Added below: previously demo-only placeholders with zero live data pipeline.
+  // Zone thresholds are our own calibration (dollar-based), NOT the original
+  // demo's debt/GDP-ratio-based thresholds, which used incompatible units against
+  // a raw dollar figure - see conversation record for reasoning.
+  debt: { file: 'debt.json', decimals: 1, prefix: '$', suffix: 'T', divide: 1000000000000, zones: { green: [0, 25], yellow: [25, 35], red: [35, 45] } },
+  spending: { file: 'spending.json', decimals: 2, prefix: '$', suffix: 'T', divide: 1000000000000, zones: { green: [0, 3.5], yellow: [3.5, 5.5], red: [5.5, 8.0] } },
+  margin: { file: 'margin.json', decimals: 2, prefix: '$', suffix: 'T', divide: 1000000, zones: { green: [0, 0.9], yellow: [0.9, 1.3], red: [1.3, 2.0] } },
+  geopol: { file: 'geopol.json', decimals: 0, prefix: '', suffix: '', zones: { green: [0, 100], yellow: [100, 150], red: [150, 400] } },
+  // CNN's undocumented internal endpoint - more fragile than the other 4 live tiles
+  // (no public API contract, CNN can change shape/block access without notice).
+  // Zones cleanly partition 0-100 unlike the original demo's overlapping text.
+  feargreed: { file: 'feargreed.json', decimals: 0, prefix: '', suffix: '', zones: { green: [0, 25], yellow: [25, 75], red: [75, 100] } },
+  // Added per accuracy review (see conversation record). Zone thresholds are standard
+  // practitioner reference points, NOT backtested against this dashboard's history -
+  // all four are context-only (excluded from the signpost count) until backtested.
+  vixterm: { file: 'vixterm.json', decimals: 2, prefix: '', suffix: '', zones: { green: [0, 0.9], yellow: [0.9, 1.0], red: [1.0, 1.4] } },
+  nfci: { file: 'nfci.json', decimals: 2, prefix: '', suffix: '', zones: { green: [-1.0, 0], yellow: [0, 0.5], red: [0.5, 3.0] } },
+  claims: { file: 'claims.json', decimals: 0, prefix: '', suffix: 'K', divide: 1000, zones: { green: [0, 300], yellow: [300, 400], red: [400, 700] } },
+  putcall: { file: 'putcall.json', decimals: 2, prefix: '', suffix: '', zones: { green: [0, 0.9], yellow: [0.9, 1.1], red: [1.1, 1.6] } }
+};
+// NOTE: sp500.json and nasdaq.json are still fetched by fetch-fred.yml but intentionally
+// NOT mapped here. They're index price levels, not risk-zone metrics - the green/yellow/red
+// zone framework (fixed absolute ranges) doesn't mean anything for a number that trends up
+// over decades. If you want these on the dashboard, they need a different card type
+// (e.g. % off all-time high, or distance from 200-day MA) - flag it if you want that built.
+
+let fredLastUpdated = null;
+let yahooLastUpdated = null;
+
+function parseObservations(json) {
+  if (!json || !json.observations) return [];
+  return json.observations
+    .filter(o => o.value !== '.' && o.value !== null && o.value !== '' && o.value !== undefined)
+    .map(o => ({ date: o.date, value: parseFloat(o.value) }))
+    .filter(o => !isNaN(o.value));
+}
+
+function calcCPIYoY(obs) {
+  if (obs.length < 13) return null;
+  return ((obs[0].value - obs[12].value) / obs[12].value) * 100;
+}
+
+function calcChange(current, previous, decimals) {
+  if (!previous && previous !== 0) return { text: '0.0%', dir: 'neutral' };
+  const diff = current - previous;
+  const pct = previous !== 0 ? (diff / Math.abs(previous)) * 100 : 0;
+  const abs = Math.abs(pct);
+  const dir = diff > 0.001 ? 'up' : diff < -0.001 ? 'down' : 'neutral';
+  return { text: (diff > 0 ? '+' : '') + abs.toFixed(decimals) + '%', dir: dir };
+}
+
+function computeZonePos(value, zones, redUpper) {
+  if (redUpper !== undefined && value > redUpper) return 0.95;
+  if (value >= zones.green[0] && value <= zones.green[1]) {
+    const r = zones.green[1] - zones.green[0];
+    return Math.max(0, Math.min(0.33, r > 0 ? (value - zones.green[0]) / r * 0.33 : 0));
+  }
+  if (value >= zones.yellow[0] && value <= zones.yellow[1]) {
+    const r = zones.yellow[1] - zones.yellow[0];
+    return 0.33 + Math.max(0, Math.min(0.33, r > 0 ? (value - zones.yellow[0]) / r * 0.33 : 0.17));
+  }
+  if (value >= zones.red[0] && value <= zones.red[1]) {
+    const r = zones.red[1] - zones.red[0];
+    return 0.66 + Math.max(0, Math.min(0.34, r > 0 ? (value - zones.red[0]) / r * 0.34 : 0.17));
+  }
+  if (value < zones.green[0]) return 0.05;
+  if (value > zones.red[1]) return 0.95;
+  return 0.5;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const m = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+function formatValue(val, cfg) {
+  if (val === null || val === undefined) return '--';
+  let v = cfg.divide ? val / cfg.divide : val;
+  return cfg.prefix + v.toFixed(cfg.decimals) + cfg.suffix;
+}
+
+function hoursAgo(dateStr) {
+  if (!dateStr) return 9999;
+  const d = new Date(dateStr);
+  return (Date.now() - d.getTime()) / (1000 * 60 * 60);
+}
+
+function dataAgeBadge(dateStr) {
+  const h = hoursAgo(dateStr);
+  if (h < 24) return '<span class="data-age fresh">● live</span>';
+  if (h < 72) return '<span class="data-age stale">● ' + Math.round(h/24) + 'd old</span>';
+  return '<span class="data-age stale">● stale</span>';
+}
+
+// =========================================================
+// PART I: FRED DATA LOADER
+// =========================================================
+
+async function loadFREDData() {
+  let meta = null;
+  try {
+    const r = await fetch(DATA_BASE + 'meta.json', { cache: 'no-store' });
+    if (r.ok) {
+      meta = await r.json();
+      fredLastUpdated = meta.lastUpdated;
+    }
+  } catch (e) {}
+
+  let updatedCount = 0;
+  let failedCount = 0;
+
+  await Promise.allSettled(
+    Object.entries(FRED_CONFIG).map(async ([id, cfg]) => {
+      try {
+        const res = await fetch(DATA_BASE + '' + cfg.file, { cache: 'no-store' });
+        if (!res.ok) { failedCount++; return; }
+        const json = await res.json();
+        const obs = parseObservations(json);
+        if (obs.length < 2) { failedCount++; return; }
+
+        let currentVal = obs[0].value;
+        let prevVal = obs[1].value;
+        let sparkData, chartData;
+
+        if (cfg.yoy) {
+          currentVal = calcCPIYoY(obs);
+          prevVal = obs.length >= 14 ? calcCPIYoY(obs.slice(1)) : currentVal;
+          sparkData = obs.slice(0, 15).reverse().map(o => o.value);
+          chartData = obs.slice(0, 30).reverse().map(o => o.value);
+        } else {
+          sparkData = obs.slice(0, 15).reverse().map(o => o.value);
+          chartData = obs.slice(0, 30).reverse().map(o => o.value);
+        }
+
+        if (currentVal === null) { failedCount++; return; }
+
+        const change = calcChange(currentVal, prevVal, cfg.decimals);
+        // BUGFIX: zones are defined in the DISPLAYED unit scale (e.g. trillions
+        // for tiles using `divide`), but currentVal is the raw undivided fetch
+        // value. Without this, any tile with `divide` set (m2, fedbal, and the
+        // new debt/spending/margin tiles) would permanently max out at red/0.95
+        // regardless of actual conditions, since the raw value always exceeds
+        // trillion-scale thresholds. Verified against live m2/fedbal data.
+        const zoneCheckVal = cfg.divide ? currentVal / cfg.divide : currentVal;
+        const zonePos = computeZonePos(zoneCheckVal, cfg.zones, cfg.redUpper);
+        const markerColor = zonePos < 0.33 ? 'var(--green)' : zonePos < 0.66 ? 'var(--yellow)' : 'var(--red)';
+
+        let severity = 'low', severityLabel = 'stable';
+        if (zonePos >= 0.66) { severity = 'high'; severityLabel = 'critical'; }
+        else if (zonePos >= 0.33) { severity = 'med'; severityLabel = 'elevated'; }
+
+        const idx = indicators.findIndex(i => i.id === id);
+        if (idx >= 0) {
+          indicators[idx].value = formatValue(currentVal, cfg);
+          indicators[idx].change = change.text;
+          indicators[idx].changeDir = change.dir;
+          indicators[idx].zonePos = zonePos;
+          indicators[idx].severity = severity;
+          indicators[idx].severityLabel = severityLabel;
+          indicators[idx].date = formatDate(obs[0].date);
+          indicators[idx].sparkline = sparkData;
+          indicators[idx].chartData = chartData;
+          indicators[idx].sourceName = 'FRED / St. Louis Fed';
+          indicators[idx]._dataAge = obs[0].date;
+          // Signpost-specific YoY series (backtest 2026-07): cpi zones are in YoY %
+          // but chartData holds the raw index (~332) - comparing raw against [0..10]
+          // zones made CPI a permanently-on signpost. dxy similar unit problem (see
+          // FRED_CONFIG note). Both are scored on YoY via _spChartData; cards unchanged.
+          const yoyStep = cfg.yoy ? 12 : (SIGNPOST_YOY_ZONES[id] ? 252 : 0);
+          if (yoyStep && obs.length > yoyStep + 5) {
+            const yoySeries = [];
+            for (let k = 0; k < Math.min(obs.length - yoyStep, 30); k++) {
+              const prev = obs[k + yoyStep].value;
+              if (prev) yoySeries.push((obs[k].value - prev) / prev * 100);
+            }
+            indicators[idx]._spChartData = yoySeries.reverse();
+          }
+          updatedCount++;
+        }
+      } catch (e) {
+        console.warn('FRED load failed for ' + id, e);
+        failedCount++;
+      }
+    })
+  );
+
+  // Update header status
+  const statusEl = document.getElementById('lastUpdate');
+  const fetchWarning = (meta && meta.failedSeries) ? ' <span style="color:var(--red)">● ' + (meta.totalCount - meta.fetchedCount) + '/' + meta.totalCount + ' series failed last run</span>' : '';
+  if (fredLastUpdated) {
+    const d = new Date(fredLastUpdated);
+    const age = hoursAgo(fredLastUpdated);
+    if (age < 24) {
+      statusEl.innerHTML = 'FRED data: ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dataAgeBadge(fredLastUpdated) + fetchWarning;
+    } else if (age < 72) {
+      statusEl.innerHTML = 'FRED data: ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dataAgeBadge(fredLastUpdated) + ' — workflow may need trigger' + fetchWarning;
+    } else {
+      statusEl.innerHTML = 'FRED data: ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' <span style="color:var(--red)">● stale (>3 days)</span> — check Actions tab' + fetchWarning;
+    }
+  } else if (updatedCount > 0) {
+    statusEl.textContent = 'FRED: ' + updatedCount + ' indicators loaded (no meta timestamp)';
+  } else {
+    statusEl.innerHTML = '<span style="color:var(--yellow)">● demo mode</span> — FRED data not found. Run workflow or check data/ folder.';
+  }
+
+  console.log('FRED load complete:', updatedCount, 'updated,', failedCount, 'failed');
+  return { updatedCount, failedCount };
+}
+
+// =========================================================
+// PART II: PRE-MARKET BIAS — Yahoo Finance with fallbacks
+// =========================================================
+
+const PREMARKET_SYMBOLS = [
+  { ticker: 'ES=F', name: 'S&P 500 Futures', weight: 25, invert: false, decimals: 2, id: 'pulse-es' },
+  { ticker: 'NQ=F', name: 'NASDAQ Futures', weight: 20, invert: false, decimals: 2, id: 'pulse-nq' },
+  { ticker: 'YM=F', name: 'Dow Futures', weight: 10, invert: false, decimals: 0, id: 'pulse-ym' },
+  { ticker: 'RTY=F', name: 'Russell 2000', weight: 10, invert: false, decimals: 2, id: 'pulse-rty' },
+  { ticker: '^VIX', name: 'VIX Spot', weight: 15, invert: true, decimals: 2, id: 'pulse-vix' },
+  { ticker: '^TNX', name: '10Y Yield', weight: 8, invert: false, decimals: 2, id: 'pulse-tnx' },
+  { ticker: 'DX-Y.NYB', name: 'US Dollar', weight: 5, invert: false, decimals: 2, id: 'pulse-dxy' },
+  { ticker: 'CL=F', name: 'WTI Crude', weight: 4, invert: false, decimals: 2, id: 'pulse-cl' },
+];
+
+// Yahoo's chart endpoint doesn't send CORS headers permitting browser-origin fetches from
+// GitHub Pages, so this can never work called directly from the client - it never did.
+// Fixed version: a GitHub Actions job (fetch-yahoo.yml) fetches these server-side, where
+// CORS doesn't apply, and commits them to data/pulse.json. This just reads that file.
+const YAHOO_KEY_MAP = {
+  'ES=F': 'es', 'NQ=F': 'nq', 'YM=F': 'ym', 'RTY=F': 'rty',
+  '^VIX': 'vix_spot', '^TNX': 'tnx', 'DX-Y.NYB': 'dxy_spot', 'CL=F': 'cl'
+};
+
+async function loadPulseData() {
+  try {
+    const res = await fetch(DATA_BASE + 'pulse.json', { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.warn('pulse.json load failed', e);
+    return null;
+  }
+}
+
+function computeBiasScore(data) {
+  let totalWeight = 0, weightedScore = 0;
+  data.forEach(d => {
+    let score = d.change;
+    if (d.invert) score = -score;
+    weightedScore += score * d.weight;
+    totalWeight += d.weight;
+  });
+  if (totalWeight === 0) return { score: 50, direction: 'neutral', strength: 0 };
+
+  const rawScore = weightedScore / totalWeight;
+  const clamped = Math.max(-3, Math.min(3, rawScore));
+  const normalized = ((clamped + 3) / 6) * 100;
+
+  let direction = 'neutral';
+  if (normalized > 60) direction = 'bull';
+  else if (normalized < 40) direction = 'bear';
+
+  let strength = Math.abs(normalized - 50) * 2;
+  return { score: Math.round(normalized), direction, strength, raw: rawScore };
+}
+
+function updatePulseUI(data, hasErrors, lastUpdated) {
+  const statusEl = document.getElementById('pulseStatus');
+  if (data.length === 0) {
+    statusEl.textContent = 'unavailable — data/pulse.json missing or empty. Check the "Fetch Yahoo Premarket Data" workflow in Actions.';
+    statusEl.className = 'pulse-status error';
+    return;
+  }
+
+  const age = lastUpdated ? hoursAgo(lastUpdated) : 9999;
+  const ageTxt = !lastUpdated ? 'age unknown' : age < (1/60) ? 'just now' : age < 1 ? Math.round(age * 60) + 'm ago' : Math.round(age) + 'h ago';
+  statusEl.textContent = data.length + '/' + PREMARKET_SYMBOLS.length + ' symbols · updated ' + ageTxt;
+  statusEl.className = 'pulse-status ' + (age < 1 ? 'live' : 'error');
+
+  data.forEach(d => {
+    const el = document.getElementById(d.id);
+    if (!el) return;
+    const changeStr = (d.change >= 0 ? '+' : '') + d.change.toFixed(2) + '%';
+    let colorClass = 'change-neutral';
+    if (d.invert) colorClass = d.change > 0 ? 'change-down' : 'change-up';
+    else colorClass = d.change > 0 ? 'change-up' : 'change-down';
+
+    el.querySelector('.pulse-value').textContent = d.current.toFixed(d.decimals);
+    el.querySelector('.pulse-change').textContent = changeStr;
+    el.querySelector('.pulse-change').className = 'pulse-change ' + colorClass;
+    el.classList.remove('error');
+  });
+
+  // Mark missing symbols as error
+  PREMARKET_SYMBOLS.forEach(s => {
+    if (!data.find(d => d.id === s.id)) {
+      const el = document.getElementById(s.id);
+      if (el) {
+        el.classList.add('error');
+        el.querySelector('.pulse-value').textContent = 'N/A';
+        el.querySelector('.pulse-change').textContent = 'unavailable';
+        el.querySelector('.pulse-change').className = 'pulse-change change-neutral';
+      }
+    }
+  });
+}
+
+// Populates the top glance row from whatever's already rendered in the full detailed
+// sections below - reads existing DOM values rather than recomputing anything, so it
+// can never diverge from what the detailed sections actually show. Called at the end
+// of calcComposite, updateBiasBar, loadNAAIMData, loadGoldData, and loadBTCData -
+// safe to call multiple times as each data source finishes loading independently.
+function updateGlanceRow() {
+  const mainScore = document.getElementById('mainScore');
+  const mainBadge = document.getElementById('mainBadge');
+  if (mainScore && mainBadge && mainBadge.textContent !== 'loading') {
+    document.getElementById('glancePartIValue').textContent = mainScore.textContent;
+    document.getElementById('glancePartIBadge').textContent = mainBadge.textContent;
+    document.getElementById('glancePartIBadge').style.color = getComputedStyle(mainBadge).color;
+  }
+
+  const biasScore = document.getElementById('biasScore');
+  const biasBadge = document.getElementById('biasBadge');
+  if (biasScore && biasBadge && biasBadge.textContent !== 'loading') {
+    document.getElementById('glancePartIIValue').textContent = biasScore.textContent;
+    document.getElementById('glancePartIIBadge').textContent = biasBadge.textContent;
+    document.getElementById('glancePartIIBadge').style.color = getComputedStyle(biasBadge).color;
+  }
+
+  const naaimValue = document.getElementById('naaimValue');
+  if (naaimValue && naaimValue.textContent !== '--') {
+    document.getElementById('glanceNaaimValue').textContent = naaimValue.textContent;
+    const naaimNum = parseFloat(naaimValue.textContent);
+    document.getElementById('glanceNaaimSub').textContent = naaimNum > 100 ? 'euphoric' : naaimNum < 20 ? 'defensive' : 'normal';
+  }
+
+  const goldPrice = document.getElementById('goldPrice');
+  const goldChange = document.getElementById('goldChange');
+  if (goldPrice && goldPrice.textContent !== '--') {
+    document.getElementById('glanceGoldValue').textContent = goldPrice.textContent;
+    document.getElementById('glanceGoldSub').textContent = goldChange.textContent;
+    document.getElementById('glanceGoldSub').style.color = goldChange.style.color;
+  }
+
+  const btcPrice = document.getElementById('btcPrice');
+  const btcChange = document.getElementById('btcChange');
+  if (btcPrice && btcPrice.textContent !== '--') {
+    document.getElementById('glanceBtcValue').textContent = btcPrice.textContent;
+    document.getElementById('glanceBtcSub').textContent = btcChange.textContent;
+    document.getElementById('glanceBtcSub').style.color = btcChange.style.color;
+  }
+}
+
+function updateBiasBar(bias) {
+  const bar = document.getElementById('biasBar');
+  const badge = document.getElementById('biasBadge');
+  const scoreEl = document.getElementById('biasScore');
+  const numEl = document.getElementById('biasNum');
+  const actionEl = document.getElementById('biasAction');
+  const fill = document.getElementById('biasFill');
+
+  bar.classList.add('open');
+  scoreEl.textContent = bias.score;
+  numEl.textContent = bias.score;
+
+  const deviation = bias.score - 50;
+  const width = Math.abs(deviation) * 2;
+  fill.style.width = width + '%';
+
+  if (bias.direction === 'bull') {
+    fill.style.left = '50%'; fill.style.right = 'auto'; fill.className = 'bias-fill bull';
+    if (bias.score >= 70) {
+      badge.textContent = 'strong bull'; badge.className = 'bias-badge bias-badge-bull-strong';
+      actionEl.textContent = 'futures up + VIX down — consider adding risk, size up longs';
+    } else {
+      badge.textContent = 'bullish'; badge.className = 'bias-badge bias-badge-bull';
+      actionEl.textContent = 'futures positive — favor longs, tighten stops on shorts';
+    }
+  } else if (bias.direction === 'bear') {
+    fill.style.left = 'auto'; fill.style.right = '50%'; fill.className = 'bias-fill bear';
+    if (bias.score <= 15) {
+      badge.textContent = 'strong bear'; badge.className = 'bias-badge bias-badge-bear-strong';
+      actionEl.textContent = 'futures down + VIX up — reduce risk, raise cash, add hedges';
+    } else {
+      badge.textContent = 'bearish'; badge.className = 'bias-badge bias-badge-bear';
+      actionEl.textContent = 'futures negative — favor shorts, tighten stops on longs';
+    }
+  } else {
+    fill.style.width = '0%'; fill.className = 'bias-fill';
+    badge.textContent = 'neutral'; badge.className = 'bias-badge bias-badge-neutral';
+    actionEl.textContent = 'mixed signals — wait for first hour confirmation before sizing';
+  }
+  updateGlanceRow();
+}
+
+// =========================================================
+// BUY/SELL VOLUME PROXY — fully automated, see fetch-breadth.yml
+// =========================================================
+const BREADTH_WEIGHT = 10; // same order of magnitude as VIX/MOO - meaningful but not dominant
+let breadthData = null;
+
+// True only when breadth.json's bars come from TODAY's US session (New York date).
+// Before the open, Yahoo's range=1d returns the PRIOR session's bars while the file's
+// _lastUpdated timestamp still looks fresh - so without this check, the 8pm SGT
+// "pre-market" score was silently including yesterday's up/down volume.
+function breadthIsTodaysSession(bd) {
+  if (!bd || !bd.symbols) return false;
+  const ts = Object.values(bd.symbols).map(s => s.lastBarTimestamp).filter(Boolean);
+  if (ts.length === 0) return false;
+  const nyDate = d => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(d);
+  return nyDate(new Date(Math.max(...ts) * 1000)) === nyDate(new Date());
+}
+
+// NAAIM SECTION START — see fetch-naaim.yml header for full removal instructions.
+// This entire block is self-contained: flip NAAIM_ENABLED to false to disable
+// without deleting code, or delete this whole block (through NAAIM SECTION END)
+// to remove it completely. Nothing outside this block depends on it.
+const NAAIM_ENABLED = true;
+// Display scale for the zone bar (not NAAIM's theoretical -200..+200 range, which
+// would compress all real-world readings into a sliver — this covers the actual
+// observed historical range with room either side). Zones are contrarian: high
+// exposure = euphoria = derisk read, low/negative = capitulation = buy read.
+const NAAIM_SCALE_MIN = -50, NAAIM_SCALE_MAX = 150;
+const NAAIM_ZONE_GREEN_MAX = 20, NAAIM_ZONE_YELLOW_MAX = 100; // judgment call, not backtested
+
+async function loadNAAIMData() {
+  if (!NAAIM_ENABLED) return;
+  const statusEl = document.getElementById('naaimStatus');
+  let data = null;
+  try {
+    const res = await fetch(DATA_BASE + 'naaim.json', { cache: 'no-store' });
+    if (res.ok) data = await res.json();
+  } catch (e) { data = null; }
+
+  if (!data || data._fetchFailed || data.current === undefined) {
+    statusEl.textContent = 'unavailable' + (data && data._fetchFailed ? ' — likely the Aug 1 2026 paywall, see fetch-naaim.yml' : ' — data/naaim.json missing');
+    statusEl.className = 'naaim-status error';
+    document.getElementById('naaimValue').textContent = '--';
+    return;
+  }
+
+  const age = hoursAgo(data._lastFetched);
+  const ageTxt = age < 24 ? Math.round(age) + 'h ago' : Math.round(age / 24) + 'd ago';
+  statusEl.textContent = 'updated ' + ageTxt + (data.postedLabel ? ' · posted ' + data.postedLabel : '');
+  statusEl.className = 'naaim-status ' + (age < 24 * 8 ? 'live' : 'error'); // weekly data, so >8 days is the "stale" cutoff, not 24h
+
+  document.getElementById('naaimValue').textContent = data.current.toFixed(1);
+
+  // Trend: week-over-week change from stored history, plus a short direction read
+  // across the last few readings. This is the actual answer to "is positioning
+  // rising or falling" - polling more often than weekly can't add to this, since
+  // the source only updates weekly.
+  const trendEl = document.getElementById('naaimTrend');
+  const hist = data.history || [];
+  if (hist.length >= 2) {
+    const prev = hist[hist.length - 2].value;
+    const delta = data.current - prev;
+    const arrow = delta > 0.5 ? '▲' : delta < -0.5 ? '▼' : '→';
+    const color = delta > 0.5 ? 'var(--red)' : delta < -0.5 ? 'var(--green)' : 'var(--text-muted)'; // red=rising exposure=more euphoric, contrarian-negative
+    trendEl.innerHTML = '<span style="color:' + color + '">' + arrow + ' ' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' vs last week</span>';
+    if (hist.length >= 4) {
+      const fourWeeksAgo = hist[Math.max(0, hist.length - 4)].value;
+      const trendDelta = data.current - fourWeeksAgo;
+      trendEl.innerHTML += ' <span style="color:var(--text-muted)">· ' + (trendDelta >= 0 ? '+' : '') + trendDelta.toFixed(1) + ' over 4 weeks</span>';
+    }
+  } else {
+    trendEl.textContent = 'building trend history (need 2+ weekly readings)';
+  }
+
+  const pct = Math.max(0, Math.min(100, ((data.current - NAAIM_SCALE_MIN) / (NAAIM_SCALE_MAX - NAAIM_SCALE_MIN)) * 100));
+  document.getElementById('naaimMarker').style.left = pct + '%';
+  const marker = document.getElementById('naaimMarker');
+  marker.style.background = data.current > NAAIM_ZONE_YELLOW_MAX ? 'var(--red)' : data.current < NAAIM_ZONE_GREEN_MAX ? 'var(--green)' : 'var(--text-primary)';
+  updateGlanceRow();
+}
+// NAAIM SECTION END
+
+// GOLD SECTION START — informational only, not scored. See fetch-gold.yml for removal.
+async function loadGoldData() {
+  const statusEl = document.getElementById('goldStatus');
+  let data = null;
+  try {
+    const res = await fetch(DATA_BASE + 'gold.json', { cache: 'no-store' });
+    if (res.ok) data = await res.json();
+  } catch (e) { data = null; }
+
+  if (!data || data._fetchFailed || data.price === undefined) {
+    statusEl.textContent = 'unavailable — data/gold.json missing or fetch failed';
+    statusEl.className = 'gold-status error';
+    document.getElementById('goldPrice').textContent = '--';
+    document.getElementById('goldChange').textContent = '--';
+    return;
+  }
+
+  const age = hoursAgo(data._lastFetched || data._lastUpdated);
+  const ageTxt = age < 24 ? Math.round(age) + 'h ago' : Math.round(age / 24) + 'd ago';
+  statusEl.textContent = 'updated ' + ageTxt;
+  statusEl.className = 'gold-status ' + (age < 48 ? 'live' : 'error');
+
+  document.getElementById('goldPrice').textContent = '$' + data.price.toFixed(2);
+  const changeEl = document.getElementById('goldChange');
+  const chg = data.changePct;
+  changeEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '% today';
+  changeEl.style.color = chg > 0 ? 'var(--green)' : chg < 0 ? 'var(--red)' : 'var(--text-muted)';
+
+  document.getElementById('gold5d').textContent = '5d: ' + (data.change5d !== null && data.change5d !== undefined ? (data.change5d >= 0 ? '+' : '') + data.change5d.toFixed(1) + '%' : '--');
+  document.getElementById('gold20d').textContent = '20d: ' + (data.change20d !== null && data.change20d !== undefined ? (data.change20d >= 0 ? '+' : '') + data.change20d.toFixed(1) + '%' : '--');
+  updateGlanceRow();
+}
+// GOLD SECTION END
+
+// BITCOIN SECTION START — informational only, not scored. See fetch-crypto.yml for removal.
+async function loadBTCData() {
+  const statusEl = document.getElementById('btcStatus');
+  let data = null;
+  try {
+    const res = await fetch(DATA_BASE + 'bitcoin.json', { cache: 'no-store' });
+    if (res.ok) data = await res.json();
+  } catch (e) { data = null; }
+
+  if (!data || data._fetchFailed || data.price === undefined) {
+    statusEl.textContent = 'unavailable — data/bitcoin.json missing or fetch failed';
+    statusEl.className = 'gold-status error';
+    document.getElementById('btcPrice').textContent = '--';
+    document.getElementById('btcChange').textContent = '--';
+    return;
+  }
+
+  const age = hoursAgo(data._lastFetched || data._lastUpdated);
+  const ageTxt = age < 24 ? Math.round(age) + 'h ago' : Math.round(age / 24) + 'd ago';
+  statusEl.textContent = 'updated ' + ageTxt;
+  statusEl.className = 'gold-status ' + (age < 24 ? 'live' : 'error'); // BTC trades 24/7, tighter staleness bar than gold futures
+
+  document.getElementById('btcPrice').textContent = '$' + data.price.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const changeEl = document.getElementById('btcChange');
+  const chg = data.changePct;
+  changeEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '% today';
+  changeEl.style.color = chg > 0 ? 'var(--green)' : chg < 0 ? 'var(--red)' : 'var(--text-muted)';
+
+  document.getElementById('btc5d').textContent = '5d: ' + (data.change5d !== null && data.change5d !== undefined ? (data.change5d >= 0 ? '+' : '') + data.change5d.toFixed(1) + '%' : '--');
+  document.getElementById('btc20d').textContent = '20d: ' + (data.change20d !== null && data.change20d !== undefined ? (data.change20d >= 0 ? '+' : '') + data.change20d.toFixed(1) + '%' : '--');
+  updateGlanceRow();
+}
+// BITCOIN SECTION END
+
+async function loadBreadthData() {
+  const statusEl = document.getElementById('breadthStatus');
+  try {
+    const res = await fetch(DATA_BASE + 'breadth.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('not found');
+    breadthData = await res.json();
+  } catch (e) {
+    breadthData = null;
+  }
+
+  if (!breadthData || !breadthData.symbols) {
+    statusEl.textContent = 'unavailable — data/breadth.json missing. Check the "Fetch Buy/Sell Volume Proxy" workflow in Actions.';
+    statusEl.className = 'breadth-status error';
+    document.getElementById('breadthRatio').textContent = '--';
+    return;
+  }
+
+  const age = hoursAgo(breadthData._lastUpdated);
+  const ageTxt = age < (1/60) ? 'just now' : age < 1 ? Math.round(age * 60) + 'm ago' : Math.round(age) + 'h ago';
+  const staleSession = !breadthIsTodaysSession(breadthData);
+  statusEl.textContent = (staleSession ? "previous session's data — not scored until today's open · " : '') + 'updated ' + ageTxt + (breadthData._failedSymbols && breadthData._failedSymbols.length ? ' · ' + breadthData._failedSymbols.length + ' symbol(s) failed' : '');
+  statusEl.className = 'breadth-status ' + (age < 1 && !staleSession ? 'live' : 'error');
+
+  const ratio = breadthData.upDownRatio;
+  const ratioEl = document.getElementById('breadthRatio');
+  ratioEl.textContent = ratio !== null ? ratio.toFixed(2) : '--';
+  ratioEl.style.color = ratio > 1.1 ? 'var(--green)' : ratio < 0.9 ? 'var(--red)' : 'var(--text-primary)';
+
+  Object.entries(breadthData.symbols).forEach(([ticker, d]) => {
+    const el = document.getElementById('breadth-' + ticker);
+    if (!el) return;
+    const total = d.upVolume + d.downVolume;
+    const upPct = total > 0 ? (d.upVolume / total) * 100 : 50;
+    el.querySelector('.breadth-item-bar').innerHTML =
+      '<div class="breadth-item-down" style="width:' + (100 - upPct).toFixed(1) + '%"></div>' +
+      '<div class="breadth-item-up" style="width:' + upPct.toFixed(1) + '%"></div>';
+    const pctEl = el.querySelector('.breadth-item-pct');
+    pctEl.textContent = upPct.toFixed(0) + '% up-volume';
+    pctEl.style.color = upPct > 55 ? 'var(--green)' : upPct < 45 ? 'var(--red)' : 'var(--text-secondary)';
+  });
+
+  recomputeAndRenderBias();
+}
+
+
+// S&P 500 imbalance magnitude (millions $) treated as roughly equivalent in signal
+// strength to a 3%-move futures day when it hits this threshold. This is a judgment
+// call, not a backtested constant - adjust MOO_SP500_EXTREME_MLN if it feels off
+// versus how the market actually opens relative to what you see.
+const MOO_SP500_EXTREME_MLN = 1500;
+const MOO_WEIGHT = 12; // comparable order of magnitude to VIX(15)/ES futures(25) weights
+
+let manualMOOEntry = null; // { sp500, ndx, dow, mag7, enteredAt } or null if not yet entered
+
+// Parses a pasted block like:
+//   S&P 500: 1616.2 MLN   Nasdaq 100: 816.4 MLN   Dow 30: 720.6 MLN   Mag 7: 300.9 MLN
+// (works whether it's labeled MOO or MOC - some sources post both with identical
+// formatting, and this only cares about the 4 numbers, not which session they're for -
+// you're responsible for pasting the actual MOO block, not a MOC one, since this can't
+// tell the difference from the label alone). Tolerant of line breaks, extra spacing,
+// and negative values. Fills the 4 fields below and triggers the same recalc as
+// clicking "Update & recalc bias" manually.
+function parseMOOPaste() {
+  const text = document.getElementById('moo-paste-input').value;
+  const errorEl = document.getElementById('mooPasteError');
+  errorEl.textContent = '';
+
+  const extract = (regex) => {
+    const m = text.match(regex);
+    return m ? parseFloat(m[1].replace(/,/g, '')) : null;
+  };
+
+  const sp500 = extract(/S\s*&?\s*P\s*500[:\s]+(-?[\d,.]+)\s*MLN/i);
+  const ndx = extract(/NASDAQ\s*100[:\s]+(-?[\d,.]+)\s*MLN/i);
+  const dow = extract(/DOW\s*30[:\s]+(-?[\d,.]+)\s*MLN/i);
+  const mag7 = extract(/MAG\s*7[:\s]+(-?[\d,.]+)\s*MLN/i);
+
+  if (sp500 === null) {
+    errorEl.textContent = 'Could not find an "S&P 500: ___ MLN" line in the pasted text - check the format matches and try again, or just fill the fields below manually.';
+    return;
+  }
+
+  document.getElementById('moo-sp500').value = sp500;
+  if (ndx !== null) document.getElementById('moo-ndx').value = ndx;
+  if (dow !== null) document.getElementById('moo-dow').value = dow;
+  if (mag7 !== null) document.getElementById('moo-mag7').value = mag7;
+
+  const missing = [];
+  if (ndx === null) missing.push('Nasdaq 100');
+  if (dow === null) missing.push('Dow 30');
+  if (mag7 === null) missing.push('Mag 7');
+  if (missing.length) {
+    errorEl.textContent = 'S&P 500 filled. Could not find: ' + missing.join(', ') + ' - check those fields manually before updating.';
+  }
+
+  document.getElementById('moo-paste-input').value = '';
+  updateMOOImbalance();
+}
+
+function updateMOOImbalance() {
+  const sp500 = parseFloat(document.getElementById('moo-sp500').value);
+  const ndx = parseFloat(document.getElementById('moo-ndx').value);
+  const dow = parseFloat(document.getElementById('moo-dow').value);
+  const mag7 = parseFloat(document.getElementById('moo-mag7').value);
+
+  if (isNaN(sp500)) {
+    document.getElementById('mooStatus').textContent = 'enter at least S&P 500 value';
+    document.getElementById('mooStatus').className = 'moo-status';
+    return;
+  }
+
+  manualMOOEntry = { sp500, ndx: isNaN(ndx) ? null : ndx, dow: isNaN(dow) ? null : dow, mag7: isNaN(mag7) ? null : mag7, enteredAt: new Date() };
+
+  const statusEl = document.getElementById('mooStatus');
+  const timeStr = manualMOOEntry.enteredAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const sp500Dir = sp500 >= 0 ? '+' : '';
+
+  // Breadth read: agreement across NDX/DOW/MAG7 sign vs S&P sign tells you whether the
+  // open imbalance is broad-based or concentrated in one part of the market. Informational
+  // only - doesn't change the score, since these constituents overlap with S&P 500 anyway.
+  const others = [ndx, dow, mag7].filter(v => !isNaN(v));
+  let breadthNote = '';
+  if (others.length > 0) {
+    const agree = others.filter(v => (v >= 0) === (sp500 >= 0)).length;
+    if (agree === others.length) breadthNote = ' — broad-based (all segments agree)';
+    else if (agree === 0) breadthNote = ' — narrow/conflicting (segments disagree with S&P)';
+    else breadthNote = ' — mixed (' + agree + '/' + others.length + ' segments agree)';
+  }
+
+  statusEl.textContent = 'entered ' + timeStr + ' — S&P ' + sp500Dir + sp500 + 'mln driving bias' + breadthNote;
+  statusEl.className = 'moo-status set';
+
+  recomputeAndRenderBias();
+}
+
+// Converts the current pulse results + (optional) manual MOO entry into a bias score
+// and updates the bias bar. Shared by fetchRealtime() and updateMOOImbalance() so the
+// two data sources are combined consistently instead of MOO silently overwriting futures.
+let lastPulseResults = [];
+
+function recomputeAndRenderBias() {
+  const combined = lastPulseResults.slice();
+
+  if (manualMOOEntry) {
+    const clamped = Math.max(-1, Math.min(1, manualMOOEntry.sp500 / MOO_SP500_EXTREME_MLN));
+    const pseudoChangePct = clamped * 3; // maps onto the same -3..+3 raw scale as futures %
+    combined.push({
+      name: 'MOO Imbalance (S&P 500)', ticker: 'MOO-SPX', current: manualMOOEntry.sp500, previous: 0,
+      change: pseudoChangePct, weight: MOO_WEIGHT, invert: false, decimals: 1, id: 'moo-composite'
+    });
+  }
+
+  if (breadthData && breadthData.upDownRatio !== null && breadthData.upDownRatio !== undefined && breadthIsTodaysSession(breadthData)) {
+    const ratio = breadthData.upDownRatio;
+    // log-scaled so it's symmetric: a 2x up/down ratio and a 0.5x ratio are equally extreme.
+    // 2x treated as the "maxed out" reference point - a judgment call, not backtested,
+    // same caveat as the other manual-threshold constants in this file.
+    const clamped = Math.max(-1, Math.min(1, Math.log(ratio) / Math.log(2)));
+    const pseudoChangePct = clamped * 3;
+    combined.push({
+      name: 'Buy/Sell Volume Proxy', ticker: 'BREADTH', current: ratio, previous: 1,
+      change: pseudoChangePct, weight: BREADTH_WEIGHT, invert: false, decimals: 2, id: 'breadth-composite'
+    });
+  }
+
+  if (combined.length > 0) {
+    const bias = computeBiasScore(combined);
+    updateBiasBar(bias);
+  }
+}
+
+async function fetchRealtime() {
+  const pulseData = await loadPulseData();
+  const results = [];
+
+  if (pulseData) {
+    PREMARKET_SYMBOLS.forEach(s => {
+      const key = YAHOO_KEY_MAP[s.ticker];
+      const d = pulseData[key];
+      if (!d || d.current == null || d.previous == null) return;
+      const change = ((d.current - d.previous) / d.previous) * 100;
+      results.push({
+        name: s.name, ticker: s.ticker, current: d.current, previous: d.previous, change,
+        weight: s.weight, invert: s.invert, decimals: s.decimals, id: s.id
+      });
+    });
+    yahooLastUpdated = pulseData._lastUpdated || null;
+  }
+
+  lastPulseResults = results;
+  updatePulseUI(results, results.length < PREMARKET_SYMBOLS.length, yahooLastUpdated);
+
+  if (results.length > 0 || manualMOOEntry || (breadthData && breadthData.upDownRatio !== null)) {
+    recomputeAndRenderBias();
+  } else {
+    document.getElementById('biasBadge').textContent = 'unavailable';
+    document.getElementById('biasBadge').className = 'bias-badge bias-badge-neutral';
+    document.getElementById('biasAction').textContent = 'pulse data unavailable — check data/pulse.json / Actions tab';
+  }
+
+  document.getElementById('pulseBar').classList.add('open');
+  return results;
+}
+
+// =========================================================
+// DEMO DATA (Part I fallback)
+// =========================================================
+
+const DEMO_INDICATORS = [
+  {
+    id: 'vix', cat: 'sentiment', title: 'CBOE VIX', subtitle: 'volatility index',
+    value: '18.42', change: '+2.3%', changeDir: 'up', severity: 'med', severityLabel: 'elevated',
+    date: 'jul 11, 2026', sparkline: [14,15,14.5,15.2,16,15.8,16.5,17,16.8,17.5,18,17.8,18.2,18.5,18.42],
+    chartData: [12,13,14,13.5,14.2,15,14.8,15.5,16,15.8,16.5,17,16.8,17.5,18,17.8,18.2,18.5,18.42],
+    sourceUrl: 'https://fred.stlouisfed.org/series/VIXCLS', sourceName: 'FRED / CBOE',
+    zones: [
+      { label: 'accumulate', val: 'VIX > 30', color: 'green', next: 'already max fear - contrarian buy signal. next: VIX drops below 20 -> watch zone' },
+      { label: 'watch', val: 'VIX 20 - 30', color: 'yellow', next: 'next up: VIX spikes above 30 -> accumulate. next down: VIX drops below 15 -> derisk' },
+      { label: 'derisk', val: 'VIX < 15', color: 'red', next: 'already complacency - sell signal. next: VIX rises above 20 -> watch zone' }
+    ],
+    zonePos: 0.55, desc: 'The CBOE Volatility Index measures market expectations of near-term volatility conveyed by S&P 500 option prices. Values above 20 signal elevated fear; above 30 indicates high anxiety. Low VIX (<15) often signals complacency and elevated crash risk.'
+  },
+  {
+    id: 'feargreed', cat: 'sentiment', title: 'Fear & Greed Index', subtitle: 'CNN market sentiment',
+    value: '47', change: '-3 pts', changeDir: 'down', severity: 'med', severityLabel: 'neutral',
+    date: 'jul 11, 2026', sparkline: [55,54,52,50,48,49,47,48,46,47,48,47,46,47,47],
+    chartData: [65,62,58,55,54,52,50,48,49,47,48,46,47,48,47,46,47,47,47],
+    sourceUrl: 'https://www.cnn.com/markets/fear-and-greed', sourceName: 'CNN Business',
+    zones: [
+      { label: 'accumulate', val: 'score 0-25 (fear)', color: 'green', next: 'already fear zone - buy signal. next: score rises above 25 -> watch' },
+      { label: 'watch', val: 'score 25-75 (neutral)', color: 'yellow', next: 'next down: score < 25 -> accumulate. next up: score > 75 -> derisk' },
+      { label: 'derisk', val: 'score 75-100 (greed)', color: 'red', next: 'already greed zone - sell signal. next: score drops below 75 -> watch' }
+    ],
+    zonePos: 0.45, desc: 'CNN Fear & Greed Index ranges from 0 (Extreme Fear) to 100 (Extreme Greed). It combines seven indicators: market momentum, stock price strength, stock price breadth, put/call ratio, market volatility, safe haven demand, and junk bond demand. Live data via CNN\'s internal endpoint - undocumented, so this tile is more fragile than the FRED-backed ones.'
+  },
+  {
+    id: 'dxy', cat: 'macro', title: 'US Dollar Index', subtitle: 'broad trade-weighted (DTWEXBGS)',
+    value: '103.85', change: '-0.12%', changeDir: 'down', severity: 'low', severityLabel: 'stable',
+    date: 'jul 11, 2026', sparkline: [104.5,104.3,104.1,103.9,103.8,103.7,103.9,103.85,103.8,103.9,103.85,103.82,103.85,103.9,103.85],
+    chartData: [105,104.8,104.5,104.3,104.1,103.9,103.8,103.7,103.9,103.85,103.8,103.9,103.85,103.82,103.85,103.9,103.85,103.8,103.85],
+    sourceUrl: 'https://fred.stlouisfed.org/series/DTWEXBGS', sourceName: 'FRED / Fed Board',
+    zones: [
+      { label: 'accumulate', val: 'DXY < 100', color: 'green', next: 'already weak dollar - buy signal. next: DXY rises above 100 -> watch' },
+      { label: 'watch', val: 'DXY 100 - 108', color: 'yellow', next: 'next down: DXY < 100 -> accumulate. next up: DXY > 108 -> derisk' },
+      { label: 'derisk', val: 'DXY > 110', color: 'red', next: 'already strong dollar - EM/commodity stress. next: DXY drops below 108 -> watch' }
+    ],
+    zonePos: 0.35, desc: 'The Nominal Broad US Dollar Index tracks the greenback against a basket of 26 currencies weighted by trade. A weaker dollar boosts US exports and multinational earnings; a very strong dollar (>110) stresses emerging markets and commodity prices.'
+  },
+  {
+    id: 'yield10y2y', cat: 'rates', title: 'Yield Curve (10Y-2Y)', subtitle: 'recession predictor',
+    value: '-0.42%', change: '+0.03%', changeDir: 'up', severity: 'high', severityLabel: 'inverted',
+    date: 'jul 11, 2026', sparkline: [-0.55,-0.52,-0.5,-0.48,-0.45,-0.44,-0.43,-0.42,-0.41,-0.42,-0.43,-0.42,-0.41,-0.42,-0.42],
+    chartData: [-0.8,-0.75,-0.7,-0.65,-0.6,-0.55,-0.52,-0.5,-0.48,-0.45,-0.44,-0.43,-0.42,-0.41,-0.42,-0.43,-0.42,-0.41,-0.42],
+    sourceUrl: 'https://fred.stlouisfed.org/series/T10Y2Y', sourceName: 'FRED / Treasury',
+    zones: [
+      { label: 'accumulate', val: 'spread > +1.0%', color: 'green', next: 'already steep - growth signal. next: spread flattens below +1.0% -> watch' },
+      { label: 'watch', val: 'spread 0 to -0.5%', color: 'yellow', next: 'next up: spread steepens above 0% -> accumulate. next down: spread < -0.5% -> derisk' },
+      { label: 'derisk', val: 'spread < -0.5%', color: 'red', next: 'already deeply inverted - recession risk. next: spread rises above -0.5% -> watch' }
+    ],
+    zonePos: 0.85, desc: 'The 10-Year minus 2-Year Treasury yield spread is the most reliable recession predictor. An inverted curve (negative) has preceded every US recession since 1955 with a 12-18 month lag. Current inversion has persisted for 18+ months.'
+  },
+  {
+    id: 'oil', cat: 'commodities', title: 'WTI Crude Oil', subtitle: 'per barrel',
+    value: '$72.18', change: '+1.4%', changeDir: 'up', severity: 'low', severityLabel: 'moderate',
+    date: 'jul 11, 2026', sparkline: [68,68.5,69,69.5,70,70.5,71,71.2,71.5,71.8,72,72.1,72.15,72.2,72.18],
+    chartData: [65,66,67,68,68.5,69,69.5,70,70.5,71,71.2,71.5,71.8,72,72.1,72.15,72.2,72.18,72.15],
+    sourceUrl: 'https://fred.stlouisfed.org/series/DCOILWTICO', sourceName: 'FRED / EIA',
+    zones: [
+      { label: 'accumulate', val: '$55 - $75', color: 'green', next: 'already in sweet spot. next: price rises above $75 -> watch' },
+      { label: 'watch', val: '$75 - $90', color: 'yellow', next: 'next down: price < $75 -> accumulate. next up: price > $90 -> derisk' },
+      { label: 'derisk', val: '> $100 or < $40', color: 'red', next: 'extreme shock - demand collapse or supply crisis. next: returns to $75-$90 -> watch' }
+    ],
+    zonePos: 0.25, desc: 'West Texas Intermediate (WTI) crude oil is the key US benchmark. Supply disruptions, geopolitical tensions, and OPEC+ decisions can cause rapid spikes. Prices above $100 shock energy-intensive sectors; below $40 signal demand collapse.'
+  },
+  {
+    id: 'debt', cat: 'fiscal', title: 'US National Debt', subtitle: 'total public debt outstanding',
+    value: '$36.2T', change: '+$2.1B today', changeDir: 'up', severity: 'high', severityLabel: 'critical',
+    date: 'jul 11, 2026', sparkline: [35.2,35.3,35.4,35.5,35.6,35.7,35.8,35.9,36.0,36.05,36.1,36.15,36.18,36.2,36.2],
+    chartData: [34,34.5,35,35.2,35.3,35.4,35.5,35.6,35.7,35.8,35.9,36.0,36.05,36.1,36.15,36.18,36.2,36.2,36.21],
+    sourceUrl: 'https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/', sourceName: 'US Treasury',
+    zones: [
+      { label: 'accumulate', val: 'total debt < $25T', color: 'green', next: 'already contained. next: debt rises above $25T -> watch' },
+      { label: 'watch', val: 'total debt $25T - $35T', color: 'yellow', next: 'next down: debt < $25T -> accumulate. next up: debt > $35T -> derisk' },
+      { label: 'derisk', val: 'total debt > $45T', color: 'red', next: 'already elevated - debt service crowding out other spending. next: debt growth slows -> watch' }
+    ],
+    zonePos: 0.90, desc: 'The US national debt has surpassed $39 trillion. Rising interest rates have pushed debt service costs above $1 trillion annually. Debt ceiling negotiations and rating agency downgrades remain acute market risks. NOTE: thresholds here are total dollar amount, not debt/GDP ratio - GDP isn\'t in this dataset, so this tracks the raw balance rather than sustainability relative to the economy.'
+  },
+  {
+    id: 'spending', cat: 'fiscal', title: 'Govt Spending (YTD)', subtitle: 'fiscal year 2026',
+    value: '$3.84T', change: '+8.2% yoy', changeDir: 'up', severity: 'med', severityLabel: 'elevated',
+    date: 'fy 2026 ytd', sparkline: [3.4,3.45,3.5,3.55,3.6,3.65,3.7,3.73,3.76,3.78,3.8,3.82,3.83,3.84,3.84],
+    chartData: [3.2,3.3,3.4,3.45,3.5,3.55,3.6,3.65,3.7,3.73,3.76,3.78,3.8,3.82,3.83,3.84,3.84,3.85,3.84],
+    sourceUrl: 'https://fiscaldata.treasury.gov/datasets/monthly-treasury-statement/', sourceName: 'US Treasury',
+    zones: [
+      { label: 'accumulate', val: 'FY YTD outlays < $3.5T', color: 'green', next: 'already contained. next: YTD outlays rise above $3.5T -> watch' },
+      { label: 'watch', val: 'FY YTD outlays $3.5T - $5.5T', color: 'yellow', next: 'next down: < $3.5T -> accumulate. next up: > $5.5T -> derisk' },
+      { label: 'derisk', val: 'FY YTD outlays > $8.0T', color: 'red', next: 'already elevated pace - deficit widening risk. next: pace slows -> watch' }
+    ],
+    zonePos: 0.60, desc: 'Federal government spending is tracked as fiscal-year-to-date gross outlays and resets every October 1 (start of the federal fiscal year), so the trend line will show a sawtooth pattern - that is expected, not a data error. Defense, Medicare, and interest on the debt are the largest drivers.'
+  },
+  {
+    id: 'cpi', cat: 'macro', title: 'CPI Inflation', subtitle: 'year-over-year',
+    value: '3.2%', change: '+0.1%', changeDir: 'up', severity: 'med', severityLabel: 'sticky',
+    date: 'jun 2026', sparkline: [3.0,3.1,3.1,3.2,3.15,3.2,3.18,3.2,3.22,3.2,3.19,3.2,3.21,3.2,3.2],
+    chartData: [2.8,2.9,3.0,3.1,3.1,3.2,3.15,3.2,3.18,3.2,3.22,3.2,3.19,3.2,3.21,3.2,3.2,3.2,3.2],
+    sourceUrl: 'https://fred.stlouisfed.org/series/CPIAUCSL', sourceName: 'FRED / BLS',
+    zones: [
+      { label: 'accumulate', val: 'CPI < 2.5%', color: 'green', next: 'already near target. next: CPI rises above 2.5% -> watch' },
+      { label: 'watch', val: 'CPI 2.5% - 3.5%', color: 'yellow', next: 'next down: CPI < 2.5% -> accumulate. next up: CPI > 4.0% -> derisk' },
+      { label: 'derisk', val: 'CPI > 4.0%', color: 'red', next: 'already runaway - fed forced to hike. next: CPI drops below 3.5% -> watch' }
+    ],
+    zonePos: 0.50, desc: 'Consumer Price Index inflation remains above the Fed 2% target. Shelter and services costs are the primary stickiness drivers. Persistent inflation forces the Fed to maintain higher rates for longer, pressuring equities and bonds.'
+  },
+  {
+    id: 'unemployment', cat: 'macro', title: 'Unemployment Rate', subtitle: 'civilian labor force',
+    value: '4.1%', change: '+0.1%', changeDir: 'up', severity: 'low', severityLabel: 'watch',
+    date: 'jun 2026', sparkline: [3.7,3.75,3.8,3.85,3.9,3.95,4.0,4.05,4.1,4.08,4.1,4.12,4.1,4.1,4.1],
+    chartData: [3.5,3.6,3.7,3.75,3.8,3.85,3.9,3.95,4.0,4.05,4.1,4.08,4.1,4.12,4.1,4.1,4.1,4.1,4.1],
+    sourceUrl: 'https://fred.stlouisfed.org/series/UNRATE', sourceName: 'FRED / BLS',
+    zones: [
+      { label: 'accumulate', val: 'UE < 3.5%', color: 'green', next: 'already full employment. next: UE rises above 3.5% -> watch' },
+      { label: 'watch', val: 'UE 3.5% - 4.5%', color: 'yellow', next: 'next down: UE < 3.5% -> accumulate. next up: UE > 5.0% -> derisk' },
+      { label: 'derisk', val: 'UE > 5.0% or Sahm triggered', color: 'red', next: 'already recession - layoffs accelerating. next: UE drops below 4.5% -> watch' }
+    ],
+    zonePos: 0.40, desc: 'The unemployment rate has ticked up from cycle lows but remains moderate. The Sahm Rule triggers when unemployment rises 0.5% above its 3-month low - currently at 0.3%, not yet signaling recession. Watch 4.5% as the critical threshold.'
+  },
+  {
+    id: 'margin', cat: 'sentiment', title: 'Margin Debt', subtitle: 'NYSE investor borrowing',
+    value: '$742B', change: '-1.2%', changeDir: 'down', severity: 'med', severityLabel: 'declining',
+    date: 'may 2026', sparkline: [780,775,770,765,760,755,750,748,745,743,742,741,742,742,742],
+    chartData: [800,790,780,775,770,765,760,755,750,748,745,743,742,741,742,742,742,742,742],
+    sourceUrl: 'https://www.finra.org/rules-guidance/key-topics/margin-accounts', sourceName: 'FINRA',
+    zones: [
+      { label: 'accumulate', val: '< $0.9T', color: 'green', next: 'already contained. next: debt rises above $0.9T -> watch' },
+      { label: 'watch', val: '$0.9T - $1.3T', color: 'yellow', next: 'next down: < $0.9T -> accumulate. next up: > $1.3T -> derisk' },
+      { label: 'derisk', val: '> $1.3T', color: 'red', next: 'already elevated leverage - forced-selling risk on a sharp downturn. next: debt declines -> watch' }
+    ],
+    zonePos: 0.45, desc: 'NYSE margin debt measures investor borrowing against securities. Rising margin debt + market highs is a classic late-cycle leverage buildup - a sharp selloff can trigger forced margin-call liquidations that amplify the move. FINRA publishes this monthly, roughly 3 weeks after month-end, so it always lags current conditions more than the other tiles here. Dollar thresholds are our own calibration against the historical 1997-2026 range (\'97 low ~$103B, current ~$1.5T), not an official benchmark.'
+  },
+  {
+    id: 'credit', cat: 'rates', title: 'Credit Spreads', subtitle: 'BBB-10Y Treasury',
+    value: '1.42%', change: '+0.08%', changeDir: 'up', severity: 'med', severityLabel: 'widening',
+    date: 'jul 11, 2026', sparkline: [1.2,1.22,1.25,1.28,1.3,1.32,1.35,1.38,1.4,1.41,1.42,1.43,1.42,1.42,1.42],
+    chartData: [1.0,1.05,1.1,1.15,1.2,1.22,1.25,1.28,1.3,1.32,1.35,1.38,1.4,1.41,1.42,1.43,1.42,1.42,1.42],
+    sourceUrl: 'https://fred.stlouisfed.org/series/BAMLC0A0CM', sourceName: 'FRED / ICE BofA',
+    zones: [
+      { label: 'accumulate', val: 'spreads < 1.5%', color: 'green', next: 'already tight - risk-on. next: spreads widen above 1.5% -> watch' },
+      { label: 'watch', val: 'spreads 1.5% - 2.5%', color: 'yellow', next: 'next down: spreads tighten below 1.5% -> accumulate. next up: spreads > 3.5% -> derisk' },
+      { label: 'derisk', val: 'spreads > 3.5%', color: 'red', next: 'already crisis mode - credit freeze risk. next: spreads drop below 2.5% -> watch' }
+    ],
+    zonePos: 0.30, desc: 'Corporate credit spreads measure the extra yield investors demand for riskier bonds over Treasuries. Widening spreads signal rising default fears and typically precede equity market stress by 3-6 months.'
+  },
+  {
+    id: 'fedbal', cat: 'rates', title: 'Fed Balance Sheet', subtitle: 'total assets',
+    value: '$7.1T', change: '-$12B w/w', changeDir: 'down', severity: 'low', severityLabel: 'QT ongoing',
+    date: 'jul 9, 2026', sparkline: [7.5,7.45,7.4,7.35,7.3,7.25,7.2,7.15,7.12,7.1,7.08,7.1,7.09,7.1,7.1],
+    chartData: [8.0,7.8,7.6,7.5,7.45,7.4,7.35,7.3,7.25,7.2,7.15,7.12,7.1,7.08,7.1,7.09,7.1,7.1,7.1],
+    sourceUrl: 'https://fred.stlouisfed.org/series/WALCL', sourceName: 'FRED / Fed',
+    zones: [
+      { label: 'accumulate', val: 'stable or expanding', color: 'green', next: 'already liquidity supportive. next: QT accelerates -> watch' },
+      { label: 'watch', val: 'gradual QT', color: 'yellow', next: 'next up: balance sheet stabilizes -> accumulate. next down: QT accelerates + stress -> derisk' },
+      { label: 'derisk', val: 'rapid QT + market stress', color: 'red', next: 'already draining liquidity - repo crisis risk. next: QT slows or pauses -> watch' }
+    ],
+    zonePos: 0.20, desc: 'The Federal Reserve continues quantitative tightening (QT), allowing Treasury and MBS holdings to roll off. Balance sheet reduction removes liquidity from the financial system. The Sep 2019 repo crisis occurred when QT went too far.'
+  },
+  {
+    id: 'm2', cat: 'macro', title: 'M2 Money Supply', subtitle: 'broad money supply',
+    value: '$21.9T', change: '+0.2%', changeDir: 'up', severity: 'med', severityLabel: 'watch',
+    date: 'jun 2026', sparkline: [21.5,21.6,21.6,21.7,21.7,21.8,21.8,21.8,21.9,21.9,21.9,21.9,21.9,21.9,21.9],
+    chartData: [21.0,21.1,21.2,21.3,21.4,21.5,21.6,21.6,21.7,21.7,21.8,21.8,21.8,21.9,21.9,21.9,21.9,21.9,21.9],
+    sourceUrl: 'https://fred.stlouisfed.org/series/M2SL', sourceName: 'FRED / Fed',
+    zones: [
+      { label: 'accumulate', val: 'M2 growing steadily', color: 'green', next: 'already liquidity supportive. next: M2 growth stalls -> watch' },
+      { label: 'watch', val: 'M2 flat / slow growth', color: 'yellow', next: 'next up: growth reaccelerates -> accumulate. next down: M2 contracts -> derisk' },
+      { label: 'derisk', val: 'M2 contracting y/y', color: 'red', next: 'already liquidity drain - historically rare and disinflationary/deflationary. next: M2 resumes growth -> watch' }
+    ],
+    zonePos: 0.30, desc: 'M2 measures cash, checking/savings deposits, and money market funds - the broad liquidity available to the economy. Sustained M2 growth is historically supportive of asset prices; M2 contraction (as briefly happened in 2022-23, the first since the 1930s) is a genuine liquidity-drain warning sign.'
+  },
+  {
+    id: 'cot', cat: 'macro', title: 'CFTC Positioning', subtitle: 'S&P 500 futures, speculative crowding',
+    value: '35th %ile', change: 'n/a', changeDir: 'neutral', severity: 'low', severityLabel: 'not crowded',
+    date: 'weekly (CFTC)', sparkline: [58,52,48,41,39,37,35,38,42,45,41,39,36,38,35],
+    chartData: [65,61,58,54,52,49,48,44,41,42,39,37,35,38,42,45,41,39,36,38,35],
+    sourceUrl: 'https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm', sourceName: 'CFTC (Commitments of Traders)',
+    zones: [
+      { label: 'accumulate', val: 'positioning not crowded (<75th %ile)', color: 'green', next: 'room for positioning to build either direction. next: crowding builds -> watch' },
+      { label: 'watch', val: 'positioning elevated (75-89th %ile)', color: 'yellow', next: 'getting crowded. next up: extreme crowding -> derisk. next down: unwinds -> accumulate' },
+      { label: 'derisk', val: 'extreme crowded-long (>=90th %ile)', color: 'red', next: 'historically precedes corrections over a multi-week/quarter horizon (98th %ile preceded the 2018 Q4 selloff) - NOT a fast signal, crowded positioning can get more crowded before it reverts, so do not expect an immediate move' }
+    ],
+    zonePos: 0.15, desc: 'Net speculative (non-commercial) positioning in S&P 500 futures as a percentile rank of its own 16-year history - are traders crowded into one side of the trade? Backtested: extreme crowded-long readings preceded the 2018 Q4 selloff (98th percentile beforehand) but did NOT precede COVID (67th percentile, an exogenous shock this signal was never going to catch). Weekly data, released Fridays for the prior Tuesday.'
+  },
+  {
+    id: 'consumer', cat: 'macro', title: 'Consumer Confidence', subtitle: 'Conference Board',
+    value: '98.4', change: '-2.1 pts', changeDir: 'down', severity: 'med', severityLabel: 'softening',
+    date: 'jun 2026', sparkline: [105,104,103,102,101,100,99,98.5,98,98.2,98.4,98.3,98.4,98.4,98.4],
+    chartData: [110,108,106,105,104,103,102,101,100,99,98.5,98,98.2,98.4,98.3,98.4,98.4,98.4,98.4],
+    sourceUrl: 'https://www.conference-board.org/topics/consumer-confidence', sourceName: 'Conference Board',
+    zones: [
+      { label: 'accumulate', val: 'index > 110', color: 'green', next: 'already optimistic. next: index drops below 110 -> watch' },
+      { label: 'watch', val: 'index 90 - 110', color: 'yellow', next: 'next up: index rises above 110 -> accumulate. next down: index < 80 -> derisk' },
+      { label: 'derisk', val: 'index < 80', color: 'red', next: 'already pessimistic - recession signal. next: index rises above 90 -> watch' }
+    ],
+    zonePos: 0.35, desc: 'Consumer confidence measures household optimism about economic conditions. Declining confidence precedes reduced spending, which drives ~70% of US GDP. Readings below 100 suggest contractionary sentiment.'
+  },
+  {
+    id: 'geopol', cat: 'sentiment', title: 'Geopolitical Risk', subtitle: 'Caldara-Iacoviello Index',
+    value: '142', change: '+8 pts', changeDir: 'up', severity: 'high', severityLabel: 'elevated',
+    date: 'jul 2026', sparkline: [120,122,125,128,130,132,135,138,140,141,142,143,142,142,142],
+    chartData: [100,105,110,115,120,122,125,128,130,132,135,138,140,141,142,143,142,142,142],
+    sourceUrl: 'https://www.matteoiacoviello.com/gpr.htm', sourceName: 'Fed / Iacoviello',
+    zones: [
+      { label: 'accumulate', val: 'index < 100', color: 'green', next: 'already calm. next: index rises above 100 -> watch' },
+      { label: 'watch', val: 'index 100 - 150', color: 'yellow', next: 'next down: index < 100 -> accumulate. next up: index > 150 -> derisk' },
+      { label: 'derisk', val: 'index > 200', color: 'red', next: 'already crisis - war/shock risk. next: index drops below 150 -> watch' }
+    ],
+    zonePos: 0.55, desc: 'The Caldara-Iacoviello Geopolitical Risk Index tracks newspaper coverage of adverse geopolitical events. Elevated readings correlate with higher oil prices, safe-haven flows, and equity volatility. Major wars typically push this above 200.'
+  },
+  {
+    id: 'vixterm', cat: 'sentiment', title: 'VIX Term Structure', subtitle: 'VIX / VIX3M ratio',
+    value: '0.91', change: '+0.02', changeDir: 'up', severity: 'med', severityLabel: 'normal',
+    date: 'jul 20, 2026', sparkline: [0.88,0.89,0.87,0.9,0.91,0.89,0.9,0.92,0.91,0.9,0.89,0.9,0.91,0.9,0.91],
+    chartData: [0.85,0.86,0.88,0.89,0.87,0.9,0.91,0.89,0.9,0.92,0.91,0.9,0.89,0.9,0.91,0.9,0.91],
+    sourceUrl: 'https://finance.yahoo.com/quote/%5EVIX3M/', sourceName: 'CBOE via Yahoo',
+    zones: [
+      { label: 'accumulate', val: 'ratio < 0.90 (contango)', color: 'green', next: 'normal upward-sloping vol curve. next: ratio rises above 0.90 -> watch' },
+      { label: 'watch', val: 'ratio 0.90 - 1.00 (flattening)', color: 'yellow', next: 'next down: ratio < 0.90 -> accumulate. next up: ratio > 1.00 -> derisk' },
+      { label: 'derisk', val: 'ratio > 1.00 (backwardation)', color: 'red', next: 'near-term vol bid above 3-month - historically only happens under real stress. next: ratio drops below 1.00 -> watch' }
+    ],
+    zonePos: 0.4, desc: 'Ratio of spot VIX to 3-month VIX futures index (VIX3M). In calm markets the vol curve slopes upward (contango, ratio below 1). Inversion (backwardation, ratio above 1) means traders are paying more for near-term protection than 3-month protection - a stronger and earlier stress signal than the VIX level alone, which is why volatility desks watch the curve shape rather than the spot number. Context tile - not in the signpost count until backtested.'
+  },
+  {
+    id: 'nfci', cat: 'rates', title: 'Financial Conditions', subtitle: 'Chicago Fed NFCI',
+    value: '-0.54', change: '-0.01', changeDir: 'down', severity: 'low', severityLabel: 'loose',
+    date: 'jul 10, 2026', sparkline: [-0.5,-0.51,-0.5,-0.52,-0.51,-0.52,-0.53,-0.52,-0.53,-0.54,-0.53,-0.52,-0.51,-0.52,-0.54],
+    chartData: [-0.45,-0.47,-0.48,-0.5,-0.51,-0.5,-0.52,-0.51,-0.52,-0.53,-0.52,-0.53,-0.54,-0.53,-0.52,-0.51,-0.52,-0.54],
+    sourceUrl: 'https://fred.stlouisfed.org/series/NFCI', sourceName: 'FRED / Chicago Fed',
+    zones: [
+      { label: 'accumulate', val: 'NFCI < 0 (loose)', color: 'green', next: 'conditions looser than average. next: NFCI rises above 0 -> watch' },
+      { label: 'watch', val: 'NFCI 0 - 0.5 (tightening)', color: 'yellow', next: 'next down: NFCI < 0 -> accumulate. next up: NFCI > 0.5 -> derisk' },
+      { label: 'derisk', val: 'NFCI > 0.5 (stressed)', color: 'red', next: 'conditions meaningfully tighter than average - 2008 peaked ~3, COVID ~0.6. next: NFCI drops below 0.5 -> watch' }
+    ],
+    zonePos: 0.1, desc: 'The Chicago Fed National Financial Conditions Index summarizes 105 measures of risk, credit, and leverage into one weekly number. Zero = average conditions since 1971; positive = tighter than average, negative = looser. The closest free equivalent to the proprietary financial-conditions indices used on bank desks (GS FCI, Bloomberg FCI), and directly targets the credit/liquidity stress gap in this dashboard. Weekly, published Wednesdays. Context tile - not in the signpost count until backtested.'
+  },
+  {
+    id: 'claims', cat: 'macro', title: 'Initial Jobless Claims', subtitle: 'weekly, seasonally adjusted',
+    value: '208K', change: '-8K', changeDir: 'down', severity: 'low', severityLabel: 'stable',
+    date: 'jul 11, 2026', sparkline: [230,228,225,222,220,218,221,219,217,215,216,214,217,216,208],
+    chartData: [240,238,235,232,230,228,225,222,220,218,221,219,217,215,216,214,217,216,208],
+    sourceUrl: 'https://fred.stlouisfed.org/series/ICSA', sourceName: 'FRED / Dept of Labor',
+    zones: [
+      { label: 'accumulate', val: 'claims < 300K', color: 'green', next: 'healthy labor market. next: claims rise above 300K -> watch' },
+      { label: 'watch', val: 'claims 300K - 400K', color: 'yellow', next: 'next down: claims < 300K -> accumulate. next up: claims > 400K -> derisk' },
+      { label: 'derisk', val: 'claims > 400K', color: 'red', next: 'recession-consistent layoffs underway. next: claims drop below 400K -> watch' }
+    ],
+    zonePos: 0.2, desc: 'New unemployment insurance filings each week - the canonical high-frequency US labor market datapoint, released every Thursday. Rises here lead the monthly unemployment rate by weeks to months, making this the fastest official read on labor market deterioration. Sustained moves above 300K historically precede growth scares; above 400K is recession territory. Context tile - not in the signpost count until backtested.'
+  },
+  {
+    id: 'putcall', cat: 'sentiment', title: 'Put/Call Ratio', subtitle: 'CBOE total, all products',
+    value: '0.97', change: '+0.05', changeDir: 'up', severity: 'med', severityLabel: 'neutral',
+    date: 'jul 17, 2026', sparkline: [0.85,0.88,0.92,0.9,0.87,0.91,0.94,0.9,0.93,0.95,0.92,0.94,0.96,0.95,0.97],
+    chartData: [0.82,0.85,0.88,0.92,0.9,0.87,0.91,0.94,0.9,0.93,0.95,0.92,0.94,0.96,0.95,0.97],
+    sourceUrl: 'https://www.cboe.com/us/options/market_statistics/daily/', sourceName: 'CBOE',
+    zones: [
+      { label: 'accumulate', val: 'ratio < 0.90 (calm)', color: 'green', next: 'normal hedging activity. next: ratio rises above 0.90 -> watch' },
+      { label: 'watch', val: 'ratio 0.90 - 1.10 (hedging up)', color: 'yellow', next: 'next down: ratio < 0.90 -> accumulate. next up: ratio > 1.10 -> derisk' },
+      { label: 'derisk', val: 'ratio > 1.10 (fear extreme)', color: 'red', next: 'heavy put buying - panic hedging. Note: extremes are often contrarian BUY signals near capitulation lows. next: ratio drops below 1.10 -> watch' }
+    ],
+    zonePos: 0.45, desc: 'Total puts traded divided by total calls traded across all CBOE products each day. Rising ratio = more downside hedging = growing fear. Like VIX, this is partly contrarian at extremes: sustained readings above 1.1 often coincide with capitulation near tradeable lows, while very low readings signal complacency. Read the trend, not one day. Context tile - backtest verdict: 1.3x lift plus a 2019-2026 data hole at the source; revisit for scoring once ~a year of live history accumulates.'
+  },
+  {
+    id: 'treasury10y', cat: 'rates', title: '10Y Treasury Yield', subtitle: 'benchmark long rate',
+    value: '4.57%', change: '+0.01%', changeDir: 'up', severity: 'med', severityLabel: 'elevated',
+    date: 'jul 16, 2026', sparkline: [4.5,4.52,4.51,4.53,4.55,4.54,4.56,4.55,4.57,4.56,4.55,4.56,4.58,4.57,4.57],
+    chartData: [4.4,4.45,4.48,4.5,4.52,4.51,4.53,4.55,4.54,4.56,4.55,4.57,4.56,4.55,4.56,4.58,4.57,4.57],
+    sourceUrl: 'https://fred.stlouisfed.org/series/DGS10', sourceName: 'FRED / US Treasury',
+    zones: [
+      { label: 'accumulate', val: 'yield < 4.25%', color: 'green', next: 'rates not restrictive for equities. next: yield rises above 4.25% -> watch' },
+      { label: 'watch', val: 'yield 4.25% - 5.25%', color: 'yellow', next: 'next down: yield < 4.25% -> accumulate. next up: yield > 5.25% -> derisk' },
+      { label: 'derisk', val: 'yield > 5.25%', color: 'red', next: 'equity risk premium compressed - valuation pressure. next: yield drops below 5.25% -> watch' }
+    ],
+    zonePos: 0.4, desc: 'The 10-year Treasury yield anchors discount rates for every risky asset. Scored two ways: rising into the red zone pressures equity valuations, and - separately - a fast COLLAPSE (>=15% relative drop in ~a week) triggers the flight-to-safety check, which is itself a stress signal: the 10Y fell 1.88% to 0.54% during the COVID crash. Backtested: the collapse check fired in Feb-Mar 2020 with near-zero false positives (0.9% of all days).'
+  },
+  {
+    id: 'treasury2y', cat: 'rates', title: '2Y Treasury Yield', subtitle: 'Fed policy expectations',
+    value: '4.16%', change: '+0.01%', changeDir: 'up', severity: 'med', severityLabel: 'elevated',
+    date: 'jul 16, 2026', sparkline: [4.1,4.12,4.11,4.13,4.14,4.13,4.15,4.14,4.16,4.15,4.14,4.15,4.17,4.16,4.16],
+    chartData: [4.0,4.05,4.08,4.1,4.12,4.11,4.13,4.14,4.13,4.15,4.14,4.16,4.15,4.14,4.15,4.17,4.16,4.16],
+    sourceUrl: 'https://fred.stlouisfed.org/series/DGS2', sourceName: 'FRED / US Treasury',
+    zones: [
+      { label: 'accumulate', val: 'yield < 4.0%', color: 'green', next: 'policy expectations easing-friendly. next: yield rises above 4.0% -> watch' },
+      { label: 'watch', val: 'yield 4.0% - 5.0%', color: 'yellow', next: 'next down: yield < 4.0% -> accumulate. next up: yield > 5.0% -> derisk' },
+      { label: 'derisk', val: 'yield > 5.0%', color: 'red', next: 'market pricing restrictive Fed policy. next: yield drops below 5.0% -> watch' }
+    ],
+    zonePos: 0.38, desc: 'The 2-year Treasury yield tracks where the market thinks Fed policy is heading - it moves ahead of the Fed itself. Like the 10Y, it carries the flight-to-safety collapse check: a fast 2Y collapse means the market is suddenly pricing emergency cuts, which historically coincides with severe risk-off (fired in 2015-16, COVID, and the 2020 September retest in backtesting).'
+  }
+];
+
+let indicators = JSON.parse(JSON.stringify(DEMO_INDICATORS));
+
+const COLORS = { green: 'var(--green)', yellow: 'var(--yellow)', red: 'var(--red)' };
+// True publication cadence of each tile's underlying source - distinct from how often
+// the fetch workflow polls (several poll daily even though the source only updates
+// weekly/monthly, since polling is harmless and the workflow only commits on change).
+// Shown on cards so a same-day refresh with no visible change reads as "expected", not "broken".
+const CADENCE = {
+  vix: 'updates daily (business days)',
+  feargreed: 'updates daily',
+  dxy: 'updates daily (business days)',
+  yield10y2y: 'updates daily (business days)',
+  oil: 'updates daily (business days)',
+  debt: 'updates daily (business days)',
+  credit: 'updates daily (business days)',
+  spending: 'updates monthly',
+  cpi: 'updates monthly',
+  unemployment: 'updates monthly',
+  margin: 'updates monthly (~3wk lag)',
+  fedbal: 'updates weekly (Wed)',
+  m2: 'updates monthly',
+  cot: 'updates weekly (Fri)',
+  consumer: 'updates monthly',
+  geopol: 'updates weekly (Mon)',
+  vixterm: 'updates daily (business days)',
+  nfci: 'updates weekly (Wed)',
+  claims: 'updates weekly (Thu)',
+  putcall: 'updates daily (after US close)',
+  treasury10y: 'updates daily (business days)',
+  treasury2y: 'updates daily (business days)'
+};
+const SEV = { low: { cls: 'sev-low', color: 'var(--green)' }, med: { cls: 'sev-med', color: 'var(--yellow)' }, high: { cls: 'sev-high', color: 'var(--red)' } };
+
+function buildSparkline(data, w, h) { const min = Math.min(...data), max = Math.max(...data), range = max - min || 1, step = w / (data.length - 1); let p = 'M0,' + (h - ((data[0] - min) / range) * h); for (let i = 1; i < data.length; i++) p += ' L' + (i * step) + ',' + (h - ((data[i] - min) / range) * h); return p; }
+function buildSparkArea(data, w, h) { const min = Math.min(...data), max = Math.max(...data), range = max - min || 1, step = w / (data.length - 1); let p = 'M0,' + h + ' L0,' + (h - ((data[0] - min) / range) * h); for (let i = 1; i < data.length; i++) p += ' L' + (i * step) + ',' + (h - ((data[i] - min) / range) * h); p += ' L' + w + ',' + h + ' Z'; return p; }
+
+const upArrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+const downArrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
+const linkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+// Tracks which indicator's detail panel is currently open, so re-clicking the same card
+// closes it (toggle) instead of requiring the X button every time.
+let openDetailIndId = null;
+
+function renderCards() {
+  const grid = document.getElementById('grid');
+  closeDetail();
+  grid.querySelectorAll('.indicator-card').forEach(c => c.remove());
+  indicators.forEach(ind => {
+    const arrow = ind.changeDir === 'up' ? upArrow : ind.changeDir === 'down' ? downArrow : '';
+    let finalClass = 'change-neutral';
+    if (ind.changeDir === 'up') finalClass = (ind.cat === 'sentiment' && ind.id !== 'margin') ? 'change-down' : 'change-up';
+    else if (ind.changeDir === 'down') finalClass = (ind.cat === 'sentiment' && ind.id !== 'margin') ? 'change-up' : 'change-down';
+    if (ind.id === 'yield10y2y') finalClass = ind.changeDir === 'up' ? 'change-up' : 'change-down';
+    const sparkPath = buildSparkline(ind.sparkline, 240, 36);
+    const areaPath = buildSparkArea(ind.sparkline, 240, 36);
+    const sev = SEV[ind.severity] || SEV.med;
+    const markerColor = COLORS[ind.zones[1].color] || 'var(--yellow)';
+    const currentZone = ind.zones.find(z => {
+      if (ind.zonePos < 0.33) return z.color === 'green';
+      if (ind.zonePos < 0.66) return z.color === 'yellow';
+      return z.color === 'red';
+    });
+
+    // Zone pills
+    let zoneStrip = '<div class="zone-strip">';
+    ind.zones.forEach(z => {
+      const isActive = (ind.zonePos < 0.33 && z.color === 'green') || (ind.zonePos >= 0.33 && ind.zonePos < 0.66 && z.color === 'yellow') || (ind.zonePos >= 0.66 && z.color === 'red');
+      zoneStrip += '<span class="zone-pill" style="background:' + COLORS[z.color] + ';opacity:' + (isActive ? '1' : '0.35') + '">' + z.label + '</span>';
+    });
+    zoneStrip += '</div>';
+
+    // Data age badge
+    const ageBadge = ind._dataAge ? dataAgeBadge(ind._dataAge) : '<span class="data-age">● demo</span>';
+    const cadenceNote = CADENCE[ind.id] ? '<span class="cadence-note">(' + CADENCE[ind.id] + ')</span>' : '';
+    const contextTag = (typeof SIGNPOST_CONTEXT_ONLY !== 'undefined' && SIGNPOST_CONTEXT_ONLY.has(ind.id)) ? '<span class="cadence-note">· context, not scored</span>' : '';
+
+    const card = document.createElement('div');
+    card.className = 'card indicator-card';
+    card.dataset.cat = ind.cat;
+    card.innerHTML = '<div class="card-top"><div class="card-title-wrap"><svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><div><div class="card-title">' + ind.title + '</div><div class="card-sub">' + ind.subtitle + '</div></div></div></div><div class="card-value-row"><div class="card-value">' + ind.value + '</div><div class="card-change ' + finalClass + '">' + arrow + ' ' + ind.change + '</div></div><svg class="card-sparkline" viewBox="0 0 240 36" preserveAspectRatio="none"><defs><linearGradient id="g-' + ind.id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + sev.color + '" stop-opacity="0.2"/><stop offset="100%" stop-color="' + sev.color + '" stop-opacity="0"/></linearGradient></defs><path d="' + areaPath + '" fill="url(#g-' + ind.id + ')" stroke="none"/><path d="' + sparkPath + '" fill="none" stroke="' + sev.color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="th-strip"><div class="th-green-bg"></div><div class="th-yellow-bg"></div><div class="th-red-bg"></div><div class="th-marker" style="left:' + (ind.zonePos * 100) + '%;background:' + markerColor + '"></div></div><div class="th-labels"><span>accumulate</span><span>watch</span><span>derisk</span></div>' + zoneStrip + '<div class="th-current">current zone: <strong>' + currentZone.label + '</strong> — ' + currentZone.val + '</div><div class="card-footer"><span class="severity ' + sev.cls + '">' + ind.severityLabel + '</span><span>' + ageBadge + cadenceNote + contextTag + '</span><a class="source-link" href="' + ind.sourceUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + linkSvg + ' ' + ind.sourceName + '</a></div>';
+    card.onclick = () => {
+      if (openDetailIndId === ind.id) closeDetail();
+      else openDetail(ind, card);
+    };
+    grid.appendChild(card);
+  });
+}
+
+function openDetail(ind, cardEl) {
+  const panel = document.getElementById('detailPanel');
+  openDetailIndId = ind.id;
+
+  // Move the panel to sit directly after whichever card was clicked, so the explanation
+  // appears right under that indicator instead of at the bottom of the whole grid. Same
+  // panel element is reused and relocated each click rather than duplicated per card.
+  if (cardEl) cardEl.insertAdjacentElement('afterend', panel);
+
+  document.getElementById('detailTitle').textContent = ind.title;
+  document.getElementById('detailDesc').textContent = ind.desc;
+  document.getElementById('detailSource').innerHTML = 'source: <a href="' + ind.sourceUrl + '" target="_blank" rel="noopener">' + ind.sourceName + '</a>';
+
+  let zonesHtml = '<div class="dz-title">signal framework — how to read ' + ind.title + '</div>';
+  zonesHtml += '<div class="dz-methodology">This indicator is scored 0-100 based on its zone position. The colored dot on the card shows where it currently sits. If the dot is near a boundary, watch for a breakout — that is your early warning.</div>';
+  ind.zones.forEach(z => {
+    const isActive = (ind.zonePos < 0.33 && z.color === 'green') || (ind.zonePos >= 0.33 && ind.zonePos < 0.66 && z.color === 'yellow') || (ind.zonePos >= 0.66 && z.color === 'red');
+    const bg = isActive ? (z.color === 'green' ? 'rgba(34,197,94,0.08)' : z.color === 'yellow' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)') : '';
+    const border = isActive ? 'border:1px solid ' + (z.color === 'green' ? 'rgba(34,197,94,0.2)' : z.color === 'yellow' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)') : '';
+    const activeLabel = isActive ? ' ← CURRENT' : '';
+    zonesHtml += '<div class="dz-row" style="' + bg + ';' + border + '"><span class="dz-dot" style="background:' + COLORS[z.color] + '"></span><span class="dz-label" style="color:' + COLORS[z.color] + '">' + z.label + activeLabel + '</span><span class="dz-val">' + z.val + '</span><span class="dz-next">' + z.next + '</span></div>';
+  });
+  zonesHtml += '<div class="dz-legend"><span style="color:var(--green)">●</span> green = accumulate/buy &nbsp; <span style="color:var(--yellow)">●</span> yellow = maintain/watch &nbsp; <span style="color:var(--red)">●</span> red = derisk/sell</div>';
+  document.getElementById('detailZones').innerHTML = zonesHtml;
+
+  const chart = document.getElementById('detailChart');
+  const data = ind.chartData;
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const w = 600, h = 180, pad = 24, ch = h - pad * 2, cw = w - pad * 2, step = cw / (data.length - 1);
+  const color = SEV[ind.severity]?.color || 'var(--blue)';
+  let path = 'M' + pad + ',' + (pad + ch - ((data[0] - min) / range) * ch);
+  let area = 'M' + pad + ',' + (pad + ch) + ' L' + pad + ',' + (pad + ch - ((data[0] - min) / range) * ch);
+  for (let i = 1; i < data.length; i++) { const x = pad + i * step, y = pad + ch - ((data[i] - min) / range) * ch; path += ' L' + x + ',' + y; area += ' L' + x + ',' + y; }
+  area += ' L' + (pad + cw) + ',' + (pad + ch) + ' Z';
+  let gridLines = '';
+  for (let i = 0; i <= 4; i++) { const y = pad + (ch / 4) * i; gridLines += '<line x1="' + pad + '" y1="' + y + '" x2="' + (w - pad) + '" y2="' + y + '" stroke="var(--border)" stroke-width="0.5"/>'; }
+  chart.innerHTML = '<defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + color + '" stop-opacity="0.15"/><stop offset="100%" stop-color="' + color + '" stop-opacity="0"/></linearGradient></defs>' + gridLines + '<path d="' + area + '" fill="url(#dg)" stroke="none"/><path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + (pad + cw) + '" cy="' + (pad + ch - ((data[data.length-1] - min) / range) * ch) + '" r="5" fill="' + color + '" stroke="var(--card-bg)" stroke-width="3"/>';
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); openDetailIndId = null; }
+
+function scrollToSection(id) {
+  if (id === null) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTopBtn');
+  if (window.scrollY > 400) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+});
+
+function toggleFramework(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function filterCategory(cat) {
+  const cards = document.querySelectorAll('.indicator-card');
+  const fomc = document.querySelector('.fomc');
+  const info = document.getElementById('infoBanner');
+  const detail = document.getElementById('detailPanel');
+  cards.forEach(c => { if (cat === 'all' || c.dataset.cat === cat) c.classList.remove('hidden'); else c.classList.add('hidden'); });
+  fomc.style.display = (cat === 'all' || cat === 'rates') ? '' : 'none';
+  info.style.display = 'block';
+  detail.classList.remove('open');
+  openDetailIndId = null;
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); filterCategory(tab.dataset.cat); };
+});
+
+function updateFOMC() {
+  const FOMC_MEETINGS=[{label:'Jul 28–Jul 29, 2026',decision:'2026-07-29T14:00:00-04:00'},{label:'Sep 15–Sep 16, 2026',decision:'2026-09-16T14:00:00-04:00'},{label:'Oct 27–Oct 28, 2026',decision:'2026-10-28T14:00:00-04:00'},{label:'Dec 8–Dec 9, 2026',decision:'2026-12-09T14:00:00-05:00'},{label:'Jan 26–Jan 27, 2027',decision:'2027-01-27T14:00:00-05:00'},{label:'Mar 16–Mar 17, 2027',decision:'2027-03-17T14:00:00-04:00'},{label:'Apr 27–Apr 28, 2027',decision:'2027-04-28T14:00:00-04:00'},{label:'Jun 8–Jun 9, 2027',decision:'2027-06-09T14:00:00-04:00'},{label:'Jul 27–Jul 28, 2027',decision:'2027-07-28T14:00:00-04:00'},{label:'Sep 14–Sep 15, 2027',decision:'2027-09-15T14:00:00-04:00'},{label:'Oct 26–Oct 27, 2027',decision:'2027-10-27T14:00:00-04:00'},{label:'Dec 7–Dec 8, 2027',decision:'2027-12-08T14:00:00-05:00'},{label:'Jan 25–Jan 26, 2028',decision:'2028-01-26T14:00:00-05:00'}]; const fomcNext=FOMC_MEETINGS.find(function(m){return new Date(m.decision)>new Date();}); const fomcSubEl=document.getElementById('fomcSub'); if(!fomcNext){ if(fomcSubEl) fomcSubEl.textContent='federal reserve policy decision — schedule needs updating, see federalreserve.gov'; document.getElementById('cdDays').textContent='—'; document.getElementById('cdHours').textContent='—'; document.getElementById('cdMins').textContent='—'; return; } if(fomcSubEl) fomcSubEl.textContent='federal reserve policy decision — ' + fomcNext.label; const nextFOMC = new Date(fomcNext.decision);
+  const now = new Date();
+  const diff = nextFOMC - now;
+  if (diff > 0) {
+    document.getElementById('cdDays').textContent = Math.floor(diff / (1000 * 60 * 60 * 24));
+    document.getElementById('cdHours').textContent = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+    document.getElementById('cdMins').textContent = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+  } else { document.getElementById('cdDays').textContent = '0'; document.getElementById('cdHours').textContent = '00'; document.getElementById('cdMins').textContent = '00'; }
+}
+
+// =========================================================
+// SIGNPOST MODEL (replaces averaged-severity composite score)
+// =========================================================
+// Averaging all 14 indicators into one blended number hides outliers - one
+// indicator screaming red gets diluted by 13 calm ones. This counts discrete
+// triggers instead, the way BofA's public "7 of 10 signposts triggered"
+// commentary works: a threshold-crossing count, not a blend.
+//
+// A signpost triggers on EITHER:
+//   LEVEL - the indicator currently sits in its own red zone (same red-zone
+//     definition already used for that indicator's card)
+//   TREND - the indicator's zone position has worsened fast recently, even if
+//     it hasn't reached red yet. Computed by re-running computeZonePos() across
+//     each indicator's actual historical values (from live FRED data, up to 30
+//     points) - not a separate invented series, the same real data the card's
+//     own chart uses.
+//
+// Both threshold constants below are judgment calls, not backtested - same
+// caveat as every other manually-set threshold in this file (MOO, TICK,
+// treasury zones). Watch a few weeks of real triggers before trusting them.
+const SIGNPOST_TREND_LOOKBACK = 5;
+const SIGNPOST_TREND_THRESHOLD = 0.15;
+
+// BACKTEST-VALIDATED FIX (2015-2026 historical simulation, see conversation record):
+// VIX's card display deliberately uses inverted/contrarian zones (green=[30,100] -
+// "high VIX = buying opportunity"). That's fine for entry-timing on the card, but it
+// meant the signpost model read VIX=82.69 during the COVID crash peak as GREEN/calm -
+// actively fighting crash detection. This override zone is used ONLY for signposts,
+// never for the VIX card's own display, which keeps its contrarian framing unchanged.
+const SIGNPOST_STRESS_OVERRIDE_ZONES = {
+  vix: { green: [0, 17], yellow: [17, 25], red: [25, 100] },
+};
+
+// BACKTEST-VALIDATED FIX: a fast COLLAPSE in yields (flight to safety) is itself a
+// stress signal, not just a rise. 10Y fell from 1.88% to 0.54% during the COVID crash -
+// under level/trend logic alone (which only catches yields RISING toward red) that
+// collapse was invisible. This catches a >=15% relative drop over the trend lookback,
+// independent of which zone the level currently sits in.
+const SIGNPOST_COLLAPSE_WATCH = { treasury10y: 0.15, treasury2y: 0.15 };
+
+// Signpost-only YoY scoring (2015-2026 backtest, 2,902 trading days): the broad dollar
+// index drifts structurally upward, so LEVEL zones can't work - a YoY surge is the
+// institutional stress read (dollar spike = global tightening). Backtested lift 2.4x,
+// fired in 2015-16, Q4 2018, COVID, and 2022. Values come from _spChartData (built in
+// loadFREDData); if there isn't enough history to compute YoY yet, dxy is skipped
+// rather than mis-scored on raw levels.
+const SIGNPOST_YOY_ZONES = {
+  dxy: { green: [-10, 4], yellow: [4, 8], red: [8, 30] },
+};
+
+// EXCLUDED from the signpost count: these five tiles show zones on their own cards but
+// do NOT feed the composite. Three reasons:
+//   1. debt and margin are structural dollar levels that only grow with the economy /
+//      market cap - both currently sit permanently in their red zones ($39.5T > $35T,
+//      $1.50T > $1.3T). A signpost that is always on is not a signal. spending is YTD
+//      and resets every October, so it climbs into red every summer - a calendar
+//      artifact, not stress.
+//   2. None of the five were in the 2015-2026 backtest that calibrated the 20/40/60%
+//      action thresholds. Adding them silently changes what those thresholds mean and
+//      makes the "backtested" claims in the framework text false.
+//   3. geopol and feargreed ARE mean-reverting and could legitimately join the
+//      composite later - but only after re-running the backtest with them included.
+// Institutional practice (BofA-style signpost counts, GS FCI): keep the scored index
+// fixed to its validated inputs; show everything else as satellite context.
+// Membership set by the 2015-2026 re-run backtest (2,902 trading days, 9 drawdown
+// events >= 8%). PROMOTED to scored: vixterm (fired in 8/9 events, 1.9x lift - the only
+// input fast enough for vol-shock corrections) and nfci (near-zero noise, replaces the
+// credit tile whose FRED source is now truncated to 3 years and never triggered once in
+// its available window). DEMOTED to context: credit (see above). REJECTED from scoring:
+// claims (0.4x lift - jobless claims LAG equity corrections; still a valid recession
+// indicator, wrong tool for drawdown detection), putcall (1.3x lift + a 2019-2026 data
+// hole at the source - revisit once ~a year of live history accumulates), and the
+// structural/seasonal tiles (debt, spending, margin) plus unbacktested geopol/feargreed.
+const SIGNPOST_CONTEXT_ONLY = new Set(['debt', 'spending', 'margin', 'geopol', 'feargreed', 'claims', 'putcall', 'credit']);
+
+function computeSignposts() {
+  const results = [];
+  indicators.forEach(ind => {
+    const cfg = FRED_CONFIG[ind.id];
+    if (!cfg) return; // indicator without a real zone config - shouldn't happen, skip defensively
+    if (SIGNPOST_CONTEXT_ONLY.has(ind.id)) return; // context tile - displayed but never scored (see set above)
+
+    const usingSp = !!(ind._spChartData && ind._spChartData.length);
+    if ((cfg.yoy || SIGNPOST_YOY_ZONES[ind.id]) && !usingSp) return; // YoY-scored series without enough history yet - skip rather than mis-score raw values
+    const zones = SIGNPOST_STRESS_OVERRIDE_ZONES[ind.id] || SIGNPOST_YOY_ZONES[ind.id] || cfg.zones;
+    // Level check uses the override zone if one exists (recomputed from the raw current
+    // value, not ind.zonePos, since ind.zonePos was computed with the card's own zones).
+    // YoY-scored series (_spChartData) hold already-transformed % values - no divide.
+    const spSeries = usingSp ? ind._spChartData : ind.chartData;
+    const spVal = v => usingSp ? v : (cfg.divide ? v / cfg.divide : v);
+    const currentRawUndivided = spSeries && spSeries.length ? spSeries[spSeries.length - 1] : null;
+    const currentRaw = currentRawUndivided !== null ? spVal(currentRawUndivided) : null;
+    const levelTriggered = currentRaw !== null
+      ? computeZonePos(currentRaw, zones, cfg.redUpper) >= 0.66
+      : ind.zonePos >= 0.66;
+
+    let trendTriggered = false, trendDelta = null, collapseTriggered = false;
+    if (spSeries && spSeries.length >= SIGNPOST_TREND_LOOKBACK + 1) {
+      const series = spSeries;
+      const zonePosSeries = series.map(v => computeZonePos(spVal(v), zones, cfg.redUpper));
+      const recent = zonePosSeries[zonePosSeries.length - 1];
+      const past = zonePosSeries[zonePosSeries.length - 1 - SIGNPOST_TREND_LOOKBACK];
+      trendDelta = recent - past;
+      trendTriggered = trendDelta >= SIGNPOST_TREND_THRESHOLD;
+
+      if (SIGNPOST_COLLAPSE_WATCH[ind.id]) {
+        const curVal = series[series.length - 1];
+        const pastVal = series[series.length - 1 - SIGNPOST_TREND_LOOKBACK];
+        if (pastVal !== 0) {
+          const relDrop = (pastVal - curVal) / Math.abs(pastVal);
+          collapseTriggered = relDrop >= SIGNPOST_COLLAPSE_WATCH[ind.id];
+        }
+      }
+    }
+
+    const triggered = levelTriggered || trendTriggered || collapseTriggered;
+    let reason = null;
+    if (collapseTriggered) reason = levelTriggered || trendTriggered ? 'both' : 'collapse';
+    else if (levelTriggered && trendTriggered) reason = 'both';
+    else if (levelTriggered) reason = 'level';
+    else if (trendTriggered) reason = 'trend';
+
+    results.push({ id: ind.id, title: ind.title, triggered, reason, trendDelta });
+  });
+  return results;
+}
+
+function renderSignpostList(signposts) {
+  const el = document.getElementById('signpostList');
+  const triggered = signposts.filter(s => s.triggered);
+  if (triggered.length === 0) {
+    el.innerHTML = '<div class="signpost-empty">no signposts currently triggered</div>';
+    return;
+  }
+  el.innerHTML = triggered.map(s => {
+    const icon = s.reason === 'both' ? '●▲' : s.reason === 'level' ? '●' : s.reason === 'collapse' ? '▼' : '▲';
+    const label = s.reason === 'both' ? 'level + trend' : s.reason === 'collapse' ? 'flight-to-safety' : s.reason;
+    return '<span class="signpost-chip ' + s.reason + '" onclick="scrollToIndicator(\'' + s.id + '\')">' + icon + ' ' + s.title + ' <span style="opacity:0.7">(' + label + ')</span></span>';
+  }).join('');
+}
+
+function scrollToIndicator(id) {
+  const ind = indicators.find(i => i.id === id);
+  const card = Array.from(document.querySelectorAll('.indicator-card')).find(c => c.querySelector('.card-title')?.textContent === ind?.title);
+  if (card && ind) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { if (openDetailIndId !== ind.id) openDetail(ind, card); }, 400);
+  }
+}
+
+function calcComposite() {
+  const signposts = computeSignposts();
+  const total = signposts.length;
+  const count = signposts.filter(s => s.triggered).length;
+  const pct = total > 0 ? count / total : 0;
+
+  document.getElementById('mainScore').textContent = count + '/' + total;
+  document.getElementById('mainNum').textContent = count + '/' + total;
+  document.getElementById('mainFill').style.width = (pct * 100) + '%';
+
+  let badge = 'reduce risk', action = 'raise cash to 20-30%, avoid new equity', cls = 'badge-orange', color = 'var(--yellow)';
+  if (pct < 0.20) { badge = 'accumulate'; action = 'overweight equities, buy dips aggressively'; cls = 'badge-green'; color = 'var(--green)'; }
+  else if (pct < 0.40) { badge = 'maintain'; action = 'hold positions, add hedges (puts/vix calls)'; cls = 'badge-yellow'; color = 'var(--yellow)'; }
+  else if (pct >= 0.60) { badge = 'derisk'; action = 'sell aggressively, raise cash > 50%, go defensive'; cls = 'badge-red'; color = 'var(--red)'; }
+  const b = document.getElementById('mainBadge');
+  b.textContent = badge;
+  b.className = 'signal-badge ' + cls;
+  document.getElementById('mainAction').textContent = action;
+  document.getElementById('mainFill').style.background = color;
+
+  renderSignpostList(signposts);
+  updateGlanceRow();
+}
+
+// =========================================================
+// MANUAL REFRESH
+// =========================================================
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  const statusEl = document.getElementById('refreshStatus');
+  if (btn.classList.contains('spinning')) return; // already running, ignore double-click
+
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing...';
+  statusEl.textContent = '';
+  statusEl.className = 'refresh-status';
+
+  // Snapshot each indicator's displayed value before refetching, so we can tell the
+  // user how many tiles actually changed vs. how many just re-fetched the same static
+  // JSON unchanged (expected for the many tiles that only publish weekly/monthly -
+  // see the "(updates ...)" note on each card - not a sign the button is broken).
+  const before = {};
+  indicators.forEach(ind => { before[ind.id] = ind.value; });
+
+  let failed = false;
+  try {
+    await Promise.all([
+      loadFREDData(),
+      loadBreadthData(),
+      loadNAAIMData(),
+      loadGoldData(),
+      loadBTCData(),
+      fetchRealtime()
+    ]);
+    renderCards();
+    calcComposite();
+  } catch (e) {
+    console.error('manualRefresh failed', e);
+    failed = true;
+  }
+
+  const changedCount = indicators.filter(ind => before[ind.id] !== undefined && before[ind.id] !== ind.value).length;
+  const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  btn.classList.remove('spinning');
+  btn.disabled = false;
+  btn.textContent = '↻ Refresh';
+
+  if (failed) {
+    statusEl.textContent = 'refresh hit an error - see console (F12)';
+    statusEl.className = 'refresh-status err';
+  } else {
+    statusEl.textContent = 'refreshed ' + now + ' - ' + changedCount + '/' + indicators.length + ' tiles changed';
+    statusEl.className = 'refresh-status ok';
+  }
+  // Clear the confirmation after a while so it doesn't look permanently "stuck"
+  setTimeout(() => { if (statusEl.textContent.indexOf('refreshed') === 0) statusEl.textContent = ''; }, 15000);
+}
+
+// =========================================================
+// INITIALIZATION
+// =========================================================
+// Records when this page was actually loaded in the browser and keeps a relative
+// "X min ago" display ticking - distinct from each panel's own data-freshness status,
+// since a page can be sitting open for hours showing data that loaded once.
+let pageLoadedAt = null;
+function setPageLoadedTimestamp() {
+  pageLoadedAt = new Date();
+  renderPageLoadedTimestamp();
+  setInterval(renderPageLoadedTimestamp, 30000);
+}
+function renderPageLoadedTimestamp() {
+  const el = document.getElementById('pageLoadedAt');
+  if (!pageLoadedAt || !el) return;
+  const mins = Math.floor((Date.now() - pageLoadedAt.getTime()) / 60000);
+  const timeStr = pageLoadedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const agoStr = mins < 1 ? 'just now' : mins === 1 ? '1 min ago' : mins < 60 ? mins + ' min ago' : Math.floor(mins / 60) + 'h ago';
+  el.textContent = 'Page loaded ' + timeStr + ' (' + agoStr + ')';
+}
+
+(async function init() {
+  setPageLoadedTimestamp();
+  await loadFREDData();
+  await loadBreadthData();
+  await loadNAAIMData();
+  await loadGoldData();
+  await loadBTCData();
+  await fetchRealtime();
+  renderCards();
+  calcComposite();
+  updateFOMC();
+  setInterval(updateFOMC, 60000);
+  document.getElementById('loader').classList.add('done');
+})();
+</script>
+  <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToSection(null)" title="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
+</body>
+</html>
