@@ -81,27 +81,6 @@
   .pulse-stale { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
   @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
 
-  .moo-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
-  .moo-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-  .moo-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
-  .moo-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; text-transform: none; }
-  .moo-status { font-size: 12px; color: var(--text-muted); }
-  .moo-status.set { color: var(--green); }
-  .moo-grid { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 8px; align-items: end; }
-  .moo-field { display: flex; flex-direction: column; gap: 3px; }
-  .moo-field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-  .moo-field input { background: #eef0f3; border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 7px 8px; font-size: 15px; font-family: var(--font); width: 100%; }
-  .moo-field input:focus { outline: none; border-color: var(--blue); }
-  .moo-btn { background: var(--blue-dim); border: 1px solid rgba(59,130,246,0.3); color: var(--blue); border-radius: 6px; padding: 7px 14px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; height: 33px; }
-  .moo-paste-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
-  .moo-paste-textarea { flex: 1; background: #0a0c10; border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 8px 10px; font-size: 13px; font-family: var(--font); resize: vertical; min-height: 44px; }
-  .moo-paste-textarea:focus { outline: none; border-color: var(--blue); }
-  .moo-paste-row .moo-btn { height: auto; align-self: stretch; }
-  .moo-paste-error { font-size: 12px; color: var(--red); margin: -4px 0 8px 0; min-height: 0; }
-  .moo-paste-note { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
-  @media (max-width: 640px) { .moo-paste-row { flex-direction: column; } }
-  .moo-btn:hover { background: rgba(59,130,246,0.2); }
-  @media (max-width: 640px) { .moo-grid { grid-template-columns: repeat(2, 1fr); } .moo-btn { grid-column: 1 / -1; } }
 
   .edge-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
   .edge-title-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -389,26 +368,6 @@
     </div>
   </div>
 
-  <!-- MOO IMBALANCE — manual entry, not auto-fetched. See index.html comments for why. -->
-  <div class="moo-bar" id="mooBar">
-    <div class="moo-title-row">
-      <span class="moo-title">MOO imbalance <span class="moo-sub">(paste the whole block from your source, ~9:20-9:30am ET / ~9:20-9:30pm SGT — context only in v2 — not scored)</span></span>
-      <span class="moo-status" id="mooStatus">not entered yet</span>
-    </div>
-    <div class="moo-paste-row">
-      <textarea id="moo-paste-input" class="moo-paste-textarea" rows="2" placeholder="Paste the whole block here, e.g.&#10;S&P 500: 1616.2 MLN  Nasdaq 100: 816.4 MLN  Dow 30: 720.6 MLN  Mag 7: 300.9 MLN"></textarea>
-      <button class="moo-btn" onclick="parseMOOPaste()">Paste → fill &amp; update</button>
-    </div>
-    <div class="moo-paste-error" id="mooPasteError"></div>
-    <div class="moo-grid">
-      <div class="moo-field"><label>S&P 500 (mln)</label><input type="number" step="0.1" id="moo-sp500" placeholder="e.g. 164.5"></div>
-      <div class="moo-field"><label>Nasdaq 100 (mln)</label><input type="number" step="0.1" id="moo-ndx" placeholder="e.g. -42.7"></div>
-      <div class="moo-field"><label>Dow 30 (mln)</label><input type="number" step="0.1" id="moo-dow" placeholder="e.g. -22.1"></div>
-      <div class="moo-field"><label>Mag 7 (mln)</label><input type="number" step="0.1" id="moo-mag7" placeholder="e.g. -41.4"></div>
-      <button class="moo-btn" onclick="updateMOOImbalance()">Save MOO figures</button>
-    </div>
-    <div class="moo-paste-note">The fields above still work individually if you'd rather type them, or if paste parsing misreads something — check the numbers landed correctly before hitting "Update".</div>
-  </div>
 
   <div class="info-banner" id="infoBanner">
     <div class="info-text">
@@ -1446,105 +1405,13 @@ async function loadBreadthData() {
 }
 
 
-// S&P 500 imbalance magnitude (millions $) treated as roughly equivalent in signal
-// strength to a 3%-move futures day when it hits this threshold. This is a judgment
-// call, not a backtested constant - adjust MOO_SP500_EXTREME_MLN if it feels off
-// versus how the market actually opens relative to what you see.
-const MOO_SP500_EXTREME_MLN = 1500;
-const MOO_WEIGHT = 12; // comparable order of magnitude to VIX(15)/ES futures(25) weights
-
-let manualMOOEntry = null; // { sp500, ndx, dow, mag7, enteredAt } or null if not yet entered
-
-// Parses a pasted block like:
-//   S&P 500: 1616.2 MLN   Nasdaq 100: 816.4 MLN   Dow 30: 720.6 MLN   Mag 7: 300.9 MLN
-// (works whether it's labeled MOO or MOC - some sources post both with identical
-// formatting, and this only cares about the 4 numbers, not which session they're for -
-// you're responsible for pasting the actual MOO block, not a MOC one, since this can't
-// tell the difference from the label alone). Tolerant of line breaks, extra spacing,
-// and negative values. Fills the 4 fields below and triggers the same recalc as
-// clicking "Update & recalc bias" manually.
-function parseMOOPaste() {
-  const text = document.getElementById('moo-paste-input').value;
-  const errorEl = document.getElementById('mooPasteError');
-  errorEl.textContent = '';
-
-  const extract = (regex) => {
-    const m = text.match(regex);
-    return m ? parseFloat(m[1].replace(/,/g, '')) : null;
-  };
-
-  const sp500 = extract(/S\s*&?\s*P\s*500[:\s]+(-?[\d,.]+)\s*MLN/i);
-  const ndx = extract(/NASDAQ\s*100[:\s]+(-?[\d,.]+)\s*MLN/i);
-  const dow = extract(/DOW\s*30[:\s]+(-?[\d,.]+)\s*MLN/i);
-  const mag7 = extract(/MAG\s*7[:\s]+(-?[\d,.]+)\s*MLN/i);
-
-  if (sp500 === null) {
-    errorEl.textContent = 'Could not find an "S&P 500: ___ MLN" line in the pasted text - check the format matches and try again, or just fill the fields below manually.';
-    return;
-  }
-
-  document.getElementById('moo-sp500').value = sp500;
-  if (ndx !== null) document.getElementById('moo-ndx').value = ndx;
-  if (dow !== null) document.getElementById('moo-dow').value = dow;
-  if (mag7 !== null) document.getElementById('moo-mag7').value = mag7;
-
-  const missing = [];
-  if (ndx === null) missing.push('Nasdaq 100');
-  if (dow === null) missing.push('Dow 30');
-  if (mag7 === null) missing.push('Mag 7');
-  if (missing.length) {
-    errorEl.textContent = 'S&P 500 filled. Could not find: ' + missing.join(', ') + ' - check those fields manually before updating.';
-  }
-
-  document.getElementById('moo-paste-input').value = '';
-  updateMOOImbalance();
-}
-
-function updateMOOImbalance() {
-  const sp500 = parseFloat(document.getElementById('moo-sp500').value);
-  const ndx = parseFloat(document.getElementById('moo-ndx').value);
-  const dow = parseFloat(document.getElementById('moo-dow').value);
-  const mag7 = parseFloat(document.getElementById('moo-mag7').value);
-
-  if (isNaN(sp500)) {
-    document.getElementById('mooStatus').textContent = 'enter at least S&P 500 value';
-    document.getElementById('mooStatus').className = 'moo-status';
-    return;
-  }
-
-  manualMOOEntry = { sp500, ndx: isNaN(ndx) ? null : ndx, dow: isNaN(dow) ? null : dow, mag7: isNaN(mag7) ? null : mag7, enteredAt: new Date() };
-
-  const statusEl = document.getElementById('mooStatus');
-  const timeStr = manualMOOEntry.enteredAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  const sp500Dir = sp500 >= 0 ? '+' : '';
-
-  // Breadth read: agreement across NDX/DOW/MAG7 sign vs S&P sign tells you whether the
-  // open imbalance is broad-based or concentrated in one part of the market. Informational
-  // only - doesn't change the score, since these constituents overlap with S&P 500 anyway.
-  const others = [ndx, dow, mag7].filter(v => !isNaN(v));
-  let breadthNote = '';
-  if (others.length > 0) {
-    const agree = others.filter(v => (v >= 0) === (sp500 >= 0)).length;
-    if (agree === others.length) breadthNote = ' — broad-based (all segments agree)';
-    else if (agree === 0) breadthNote = ' — narrow/conflicting (segments disagree with S&P)';
-    else breadthNote = ' — mixed (' + agree + '/' + others.length + ' segments agree)';
-  }
-
-  statusEl.textContent = 'entered ' + timeStr + ' — S&P ' + sp500Dir + sp500 + 'mln (context only, not scored)' + breadthNote;
-  statusEl.className = 'moo-status set';
-
-  recomputeAndRenderBias();
-}
-
-// Converts the current pulse results + (optional) manual MOO entry into a bias score
-// and updates the bias bar. Shared by fetchRealtime() and updateMOOImbalance() so the
-// two data sources are combined consistently instead of MOO silently overwriting futures.
+// Converts the current pulse results into a bias score and updates the bias bar.
 let lastPulseResults = [];
 
 function recomputeAndRenderBias() {
   const combined = lastPulseResults.slice();
 
-  // v2: MOO imbalance and the buy/sell volume proxy are shown as context only.
+  // v2: MOO imbalance removed entirely; the buy/sell volume proxy is context only.
   // Neither exists at the 8pm SGT read, neither has been tested, and mixing them in
   // made the score mean different things at different times of day. The score is now
   // exactly what the Edge Tracker grades.
@@ -1587,7 +1454,7 @@ async function fetchRealtime() {
     if (el) { el.querySelector('.pulse-change').textContent = 'not scored before 8:20am ET'; }
   }
 
-  if (results.length > 0 || manualMOOEntry || (breadthData && breadthData.upDownRatio !== null)) {
+  if (results.length > 0) {
     recomputeAndRenderBias();
   } else {
     document.getElementById('biasBadge').textContent = 'unavailable';

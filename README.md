@@ -24,7 +24,7 @@ Read: the score is a good summary of the overnight move, so it labels red/green 
 The older v1 claim (0.555 correlation, 78–96% hit rates) compared the score with the gap it was partly built from, using daily bars; it is withdrawn here.
 
 ## Changes vs v1
-1. **Score = futures, VIX, yield, dollar, crude only.** MOO imbalance and the buy/sell volume proxy are shown as context, not scored. Neither exists at the 8pm SGT read, neither was tested, and including them made the score mean different things at different times of day.
+1. **Score = futures, VIX, yield, dollar, crude only.** The MOO imbalance entry box is removed entirely; the buy/sell volume proxy is shown as context, not scored. Neither exists at the 8pm SGT read, neither was tested, and including them made the score mean different things at different times of day.
 2. **Stale 10Y yield fixed.** ^TNX has no data before 08:20 ET; v1 then scored *yesterday's* yield move as overnight news. v2 skips TNX until it trades.
 3. **Stale buy/sell volume flagged.** Before the open, the volume file holds the previous session's bars under a fresh timestamp; v2 labels it as such.
 4. **Edge Tracker panel** with the backtest, live forward test and last 10 sessions.
