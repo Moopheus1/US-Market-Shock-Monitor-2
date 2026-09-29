@@ -348,15 +348,15 @@
   </div>
 
   <div class="glance-row" id="glanceRow">
-    <div class="glance-card" onclick="scrollToSection('partIHeading')">
-      <span class="glance-label">Part I <span class="glance-question">— is macro cracking?</span></span>
-      <span class="glance-value" id="glancePartIValue">--</span>
-      <span class="glance-sub" id="glancePartIBadge">loading</span>
-    </div>
     <div class="glance-card" onclick="scrollToSection('partIIHeading')">
       <span class="glance-label">Part II <span class="glance-question">— red day?</span></span>
       <span class="glance-value" id="glancePartIIValue">--</span>
       <span class="glance-sub" id="glancePartIIBadge">loading</span>
+    </div>
+    <div class="glance-card" onclick="scrollToSection('partIHeading')">
+      <span class="glance-label">Part I <span class="glance-question">— is macro cracking?</span></span>
+      <span class="glance-value" id="glancePartIValue">--</span>
+      <span class="glance-sub" id="glancePartIBadge">loading</span>
     </div>
     <div class="glance-card" onclick="scrollToSection('naaimBar')">
       <span class="glance-label">NAAIM</span>
@@ -378,9 +378,148 @@
 
   <div class="info-banner" id="infoBanner">
     <div class="info-text">
+      <strong>Part II answers: "Is today likely to close green or red, and how big a day?"</strong> — Use for context and position size, not as a trade trigger. Real-time data from Yahoo Finance and SqueezeMetrics.<br>
       <strong>Part I answers: "Are we in a risky macro regime?"</strong> — Use for strategic positioning (cash, hedges) over 2–4 weeks. FRED data has 1-day lag.<br>
-      <strong>Part II answers: "Is today likely to open higher or lower?"</strong> — Use for tactical entry/exit timing. Real-time data from Yahoo Finance.<br>
       Click any card to see its signal framework. Data refreshes automatically.
+    </div>
+  </div>
+
+
+  <div class="section-heading" id="partIIHeading"><h2>Part II — Pre-Market Bias</h2><span class="section-heading-sub">tactical, today's session — Yahoo Finance, near-real-time</span><div class="section-heading-line"></div></div>
+
+  <div class="edge-bar" id="edgeBar">
+    <div class="edge-title-row">
+      <span class="edge-title">How to use the score <span class="edge-sub">— checked against every trading day since May 2024</span></span>
+      <span class="edge-status" id="edgeStatus">loading...</span>
+    </div>
+
+    <div class="edge-today" id="edgeToday">--</div>
+
+    <div class="edge-rules">
+      <div class="edge-rule good">
+        <div class="edge-rule-head">✅ Use it to know the likely colour of the day</div>
+        <div class="edge-rule-body" id="edgeRule1">--</div>
+      </div>
+      <div class="edge-rule bad">
+        <div class="edge-rule-head">❌ Don't buy or short because of it</div>
+        <div class="edge-rule-body" id="edgeRule2">--</div>
+      </div>
+      <div class="edge-rule tip">
+        <div class="edge-rule-head">⏱ Want a stronger call? Check again at 10:30pm SGT</div>
+        <div class="edge-rule-body">One hour after the open, look at SPY vs yesterday's close. If it's <strong>more than 0.5% above</strong>, the day finished green about <strong>9 times out of 10</strong>; <strong>more than 0.5% below</strong>, red about 9 times out of 10. That happens roughly 1 day in 3. If it's closer than 0.5%, it's only 3 out of 4. <span class="muted">(Tested on 729 days since Oct 2023. Like the 8pm score, this tells you the day's colour — it doesn't predict the next move.)</span></div>
+      </div>
+    </div>
+
+    <div class="edge-cols" style="margin-bottom:14px">
+      <div class="edge-rule size">
+        <div class="edge-rule-head">📏 Size of today <span class="muted" id="sizeAsOf"></span></div>
+        <div class="edge-rule-body" id="sizeBody">loading...</div>
+        <div class="size-bands" id="sizeBands"></div>
+        <div class="edge-note" id="sizeNote" style="margin-top:6px"></div>
+      </div>
+      <div class="edge-rule flow">
+        <div class="edge-rule-head">🧪 Options-flow test <span class="muted">(does big-money flow predict anything?)</span></div>
+        <div class="edge-rule-body" id="flowBody">loading...</div>
+        <div class="edge-table-wrap" style="margin:6px 0 0"><table class="edge-table" style="min-width:0"><tbody id="flowRecent"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="edge-cols">
+      <div>
+        <div class="edge-h">Scorecard — how often the 8pm call was right</div>
+        <div id="edgeScorecard">--</div>
+      </div>
+      <div>
+        <div class="edge-h">Last 10 days</div>
+        <div class="edge-table-wrap" style="margin-bottom:0"><table class="edge-table" style="min-width:0">
+          <thead><tr><th>date</th><th>8pm call</th><th>day closed</th><th>right?</th></tr></thead>
+          <tbody id="edgeRecent"></tbody>
+        </table></div>
+        <div class="edge-note" id="edgeForward" style="margin-top:8px">--</div>
+      </div>
+    </div>
+
+    <details class="edge-details">
+      <summary>Details for the curious (full statistics)</summary>
+      <div class="edge-verdict" id="edgeVerdict" style="margin-top:10px">--</div>
+      <div class="edge-table-wrap">
+        <table class="edge-table">
+          <thead><tr><th>question</th><th>bullish calls right</th><th>bearish calls right</th><th>coin-flip rate</th><th>verdict</th></tr></thead>
+          <tbody id="edgeTableBody"></tbody>
+        </table>
+      </div>
+      <div class="edge-note">How it's built: every day since May 2024 the score is rebuilt from hourly prices that were already known at 8pm SGT, using the same formula as the score below, then compared with what SPY actually did. "Right" = SPY moved the way the call pointed. Coin-flip rate = how often SPY moved that way on any day anyway. "Edge" only when the 95% range sits fully above the coin-flip rate. Days from <span id="edgeFwdSince"></span> onward are a live test the method never saw.</div>
+    </details>
+  </div>
+
+  <div class="bias-bar" id="biasBar">
+    <div class="bias-left">
+      <span class="bias-badge bias-badge-neutral" id="biasBadge">neutral</span>
+      <span class="bias-text">pre-market bias score <strong id="biasScore">0</strong> — <strong id="biasAction">wait for first hour confirmation before sizing</strong></span>
+    </div>
+    <div class="bias-right">
+      <div class="bias-score">
+        <div class="bias-score-num" id="biasNum">0</div>
+        <div class="bias-score-label">bias score</div>
+      </div>
+      <div class="bias-meter" id="biasMeter"><div class="bias-fill" id="biasFill" style="width:0%;background:var(--yellow)"></div></div>
+    </div>
+  </div>
+
+  <div class="framework-box open" id="frameworkPartII" onclick="toggleFramework('frameworkPartII')">
+    <div class="framework-toggle">
+      <span class="framework-toggle-label">▸ signal framework — how the pre-market bias score works</span>
+      <span class="framework-toggle-arrow">▾</span>
+    </div>
+    <div class="framework-body">
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">0–15 strong bear</span><span class="framework-meaning">Futures sharply down + VIX up overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">16–39 bearish</span><span class="framework-meaning">Futures net down overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">40–60 neutral</span><span class="framework-meaning">No strong overnight move.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">61–69 bullish</span><span class="framework-meaning">Futures net up overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">70–100 strong bull</span><span class="framework-meaning">Futures sharply up + VIX down overnight.</span></div>
+      <div class="framework-arrow-note">
+        <strong style="color:var(--text-primary)">What it is:</strong> a weighted average of the overnight % change in ES/NQ/YM/RTY futures, VIX (inverted), 10Y yield, dollar and crude, each measured against the prior 4pm ET close. Raw % changes are clamped to ±3 and mapped to 0–100 (50 = flat). Note: inputs are NOT individually scaled — VIX's % moves are several times larger than ES's, so VIX carries more influence than its weight suggests.
+        <strong style="color:var(--text-primary)">What the honest backtest says</strong> (rebuilt hour-by-hour exactly as it read at 8pm SGT, ~600 trading days — see the Edge Tracker above): it is a good <em>summary</em> of the overnight move, so it tells you whether today will probably close red or green. It is <em>not</em> a forecast: from 8pm SGT to the close it is right about half the time, because the move it reads has already happened. The older "0.555 correlation / 78–96% hit rate" figures compared the score with the gap it was partly built from and are withdrawn.
+      </div>
+    </div>
+  </div>
+
+  <div class="pulse-bar" id="pulseBar">
+    <div class="pulse-title">
+      <span>pre-market pulse — real-time market data</span>
+      <span class="pulse-status" id="pulseStatus">connecting...</span>
+    </div>
+    <div class="pulse-grid" id="pulseGrid">
+      <div class="pulse-item" id="pulse-es"><div class="pulse-name">S&P 500 Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-nq"><div class="pulse-name">NASDAQ Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-ym"><div class="pulse-name">Dow Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-rty"><div class="pulse-name">Russell 2000</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-vix"><div class="pulse-name">VIX Spot</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-tnx"><div class="pulse-name">10Y Yield</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-dxy"><div class="pulse-name">US Dollar</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+      <div class="pulse-item" id="pulse-cl"><div class="pulse-name">WTI Crude</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
+    </div>
+  </div>
+
+
+  <!-- BUY/SELL VOLUME PROXY — fully automated, no manual entry. See fetch-breadth.yml.
+       Method: 1-min bars for SPY/QQQ/DIA/IWM classified up/down by close vs prior close.
+       This is a bar-direction proxy, NOT tick-level aggressor-side (Lee-Ready) volume -
+       that needs paid NBBO quote data. Labeled clearly below so it's never mistaken for it. -->
+  <div class="breadth-bar" id="breadthBar">
+    <div class="breadth-title-row">
+      <span class="breadth-title">buy/sell volume proxy <span class="breadth-sub">(auto, 1-min bar direction — SPY/QQQ/DIA/IWM, first 4 trading hours — context only, not scored)</span></span>
+      <span class="breadth-status" id="breadthStatus">loading...</span>
+    </div>
+    <div class="breadth-summary">
+      <span class="breadth-ratio" id="breadthRatio">--</span>
+      <span class="breadth-ratio-label">up-volume : down-volume ratio</span>
+    </div>
+    <div class="breadth-grid" id="breadthGrid">
+      <div class="breadth-item" id="breadth-SPY"><div class="breadth-item-name">S&P 500 (SPY)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-QQQ"><div class="breadth-item-name">Nasdaq 100 (QQQ)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-DIA"><div class="breadth-item-name">Dow 30 (DIA)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
+      <div class="breadth-item" id="breadth-IWM"><div class="breadth-item-name">Russell 2000 (IWM)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
     </div>
   </div>
 
@@ -448,152 +587,13 @@
       <div class="framework-arrow-note">
         Each indicator triggers on LEVEL (in its own red zone), TREND (moved fast toward red recently, off real historical FRED values), or for VIX and treasury yields specifically, a third condition tuned for crash detection - see below. Either firing counts as triggered; the number shown is a straight count, not a blended average.
         <strong style="color:var(--text-primary)">Backtested against 2015-2026 (2,902 trading days, re-run July 2026 with publication-lag-aware, as-of-date data):</strong> the composite was re-validated against all 9 SPY drawdowns of 8%+ in the window. Slow, regime-driven events are detected well: 2015-16 growth scare peaked at 46%, COVID at 54%, and the 2022 bear market at 54%, against a calm-day median of 15% - readings of 40%+ occurred on only 0.9% of calm days, and 60%+ never occurred outside a genuine event. This re-run also caught and fixed three scoring bugs the previous version shipped with: CPI was scored on its raw index level against YoY-percentage zones (permanently triggered), the dollar index was scored on the broad DTWEXBGS scale against zones calibrated for ICE DXY (triggered on 94% of all days), and the treasury flight-to-safety collapse check referenced series that were never actually scored (dead code - now live via the two treasury tiles). Membership changes from the re-run: VIX term structure and NFCI promoted into the count (see their cards), credit spreads demoted to context (source data truncated at FRED; NFCI covers the same conditions channel with 50+ years of history), jobless claims and put/call evaluated and rejected (claims LAG equity corrections - 0.4x lift; put/call has a 2019-2026 data hole).
-        <strong style="color:var(--text-primary)">Known, honest limitation:</strong> fast vol-shock corrections - Feb 2018, Q4 2018, Aug 2024, Feb-Apr 2025 - peak at only ~23% under this model. That is not a calibration miss; it is structural. A count of mostly-macro indicators cannot turn red in two weeks. This composite is a REGIME gauge: it tells you when the environment is fragile (2015-16, 2020, 2022 all crossed 40%), not when a crash starts. The two fastest inputs (VIX stress zones, VIX term structure) are the only ones that move intra-correction - watch those cards directly, and Part II below, for anything faster than a regime shift. Prior published figures (72.7% COVID peak, 2,896 days) could not be reproduced under the production scoring logic and are superseded by this run.
+        <strong style="color:var(--text-primary)">Known, honest limitation:</strong> fast vol-shock corrections - Feb 2018, Q4 2018, Aug 2024, Feb-Apr 2025 - peak at only ~23% under this model. That is not a calibration miss; it is structural. A count of mostly-macro indicators cannot turn red in two weeks. This composite is a REGIME gauge: it tells you when the environment is fragile (2015-16, 2020, 2022 all crossed 40%), not when a crash starts. The two fastest inputs (VIX stress zones, VIX term structure) are the only ones that move intra-correction - watch those cards directly, and Part II above, for anything faster than a regime shift. Prior published figures (72.7% COVID peak, 2,896 days) could not be reproduced under the production scoring logic and are superseded by this run.
         This is a 2–4 week strategic read (FRED data has a 1-day lag) — it answers "are we in a risky regime," not "what happens today." For that, see Part II below.
       </div>
     </div>
   </div>
 
 
-
-  <div class="section-heading" id="partIIHeading"><h2>Part II — Pre-Market Bias</h2><span class="section-heading-sub">tactical, today's session — Yahoo Finance, near-real-time</span><div class="section-heading-line"></div></div>
-
-  <div class="bias-bar" id="biasBar">
-    <div class="bias-left">
-      <span class="bias-badge bias-badge-neutral" id="biasBadge">neutral</span>
-      <span class="bias-text">pre-market bias score <strong id="biasScore">0</strong> — <strong id="biasAction">wait for first hour confirmation before sizing</strong></span>
-    </div>
-    <div class="bias-right">
-      <div class="bias-score">
-        <div class="bias-score-num" id="biasNum">0</div>
-        <div class="bias-score-label">bias score</div>
-      </div>
-      <div class="bias-meter" id="biasMeter"><div class="bias-fill" id="biasFill" style="width:0%;background:var(--yellow)"></div></div>
-    </div>
-  </div>
-
-  <div class="framework-box open" id="frameworkPartII" onclick="toggleFramework('frameworkPartII')">
-    <div class="framework-toggle">
-      <span class="framework-toggle-label">▸ signal framework — how the pre-market bias score works</span>
-      <span class="framework-toggle-arrow">▾</span>
-    </div>
-    <div class="framework-body">
-      <div class="framework-row"><span class="framework-range" style="color:var(--red)">0–15 strong bear</span><span class="framework-meaning">Futures sharply down + VIX up overnight.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--red)">16–39 bearish</span><span class="framework-meaning">Futures net down overnight.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">40–60 neutral</span><span class="framework-meaning">No strong overnight move.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--green)">61–69 bullish</span><span class="framework-meaning">Futures net up overnight.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--green)">70–100 strong bull</span><span class="framework-meaning">Futures sharply up + VIX down overnight.</span></div>
-      <div class="framework-arrow-note">
-        <strong style="color:var(--text-primary)">What it is:</strong> a weighted average of the overnight % change in ES/NQ/YM/RTY futures, VIX (inverted), 10Y yield, dollar and crude, each measured against the prior 4pm ET close. Raw % changes are clamped to ±3 and mapped to 0–100 (50 = flat). Note: inputs are NOT individually scaled — VIX's % moves are several times larger than ES's, so VIX carries more influence than its weight suggests.
-        <strong style="color:var(--text-primary)">What the honest backtest says</strong> (rebuilt hour-by-hour exactly as it read at 8pm SGT, ~600 trading days — see the Edge Tracker below): it is a good <em>summary</em> of the overnight move, so it tells you whether today will probably close red or green. It is <em>not</em> a forecast: from 8pm SGT to the close it is right about half the time, because the move it reads has already happened. The older "0.555 correlation / 78–96% hit rate" figures compared the score with the gap it was partly built from and are withdrawn.
-      </div>
-    </div>
-  </div>
-
-  <div class="pulse-bar" id="pulseBar">
-    <div class="pulse-title">
-      <span>pre-market pulse — real-time market data</span>
-      <span class="pulse-status" id="pulseStatus">connecting...</span>
-    </div>
-    <div class="pulse-grid" id="pulseGrid">
-      <div class="pulse-item" id="pulse-es"><div class="pulse-name">S&P 500 Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-nq"><div class="pulse-name">NASDAQ Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-ym"><div class="pulse-name">Dow Futures</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-rty"><div class="pulse-name">Russell 2000</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-vix"><div class="pulse-name">VIX Spot</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-tnx"><div class="pulse-name">10Y Yield</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-dxy"><div class="pulse-name">US Dollar</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-      <div class="pulse-item" id="pulse-cl"><div class="pulse-name">WTI Crude</div><div class="pulse-value">--</div><div class="pulse-change">--</div></div>
-    </div>
-  </div>
-
-
-  <!-- BUY/SELL VOLUME PROXY — fully automated, no manual entry. See fetch-breadth.yml.
-       Method: 1-min bars for SPY/QQQ/DIA/IWM classified up/down by close vs prior close.
-       This is a bar-direction proxy, NOT tick-level aggressor-side (Lee-Ready) volume -
-       that needs paid NBBO quote data. Labeled clearly below so it's never mistaken for it. -->
-  <div class="breadth-bar" id="breadthBar">
-    <div class="breadth-title-row">
-      <span class="breadth-title">buy/sell volume proxy <span class="breadth-sub">(auto, 1-min bar direction — SPY/QQQ/DIA/IWM, first 4 trading hours — context only, not scored)</span></span>
-      <span class="breadth-status" id="breadthStatus">loading...</span>
-    </div>
-    <div class="breadth-summary">
-      <span class="breadth-ratio" id="breadthRatio">--</span>
-      <span class="breadth-ratio-label">up-volume : down-volume ratio</span>
-    </div>
-    <div class="breadth-grid" id="breadthGrid">
-      <div class="breadth-item" id="breadth-SPY"><div class="breadth-item-name">S&P 500 (SPY)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
-      <div class="breadth-item" id="breadth-QQQ"><div class="breadth-item-name">Nasdaq 100 (QQQ)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
-      <div class="breadth-item" id="breadth-DIA"><div class="breadth-item-name">Dow 30 (DIA)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
-      <div class="breadth-item" id="breadth-IWM"><div class="breadth-item-name">Russell 2000 (IWM)</div><div class="breadth-item-bar"></div><div class="breadth-item-pct">--</div></div>
-    </div>
-  </div>
-
-
-  <div class="edge-bar" id="edgeBar">
-    <div class="edge-title-row">
-      <span class="edge-title">How to use the score <span class="edge-sub">— checked against every trading day since May 2024</span></span>
-      <span class="edge-status" id="edgeStatus">loading...</span>
-    </div>
-
-    <div class="edge-today" id="edgeToday">--</div>
-
-    <div class="edge-rules">
-      <div class="edge-rule good">
-        <div class="edge-rule-head">✅ Use it to know the likely colour of the day</div>
-        <div class="edge-rule-body" id="edgeRule1">--</div>
-      </div>
-      <div class="edge-rule bad">
-        <div class="edge-rule-head">❌ Don't buy or short because of it</div>
-        <div class="edge-rule-body" id="edgeRule2">--</div>
-      </div>
-      <div class="edge-rule tip">
-        <div class="edge-rule-head">⏱ Want a stronger call? Check again at 10:30pm SGT</div>
-        <div class="edge-rule-body">One hour after the open, look at SPY vs yesterday's close. If it's <strong>more than 0.5% above</strong>, the day finished green about <strong>9 times out of 10</strong>; <strong>more than 0.5% below</strong>, red about 9 times out of 10. That happens roughly 1 day in 3. If it's closer than 0.5%, it's only 3 out of 4. <span class="muted">(Tested on 729 days since Oct 2023. Like the 8pm score, this tells you the day's colour — it doesn't predict the next move.)</span></div>
-      </div>
-    </div>
-
-    <div class="edge-cols" style="margin-bottom:14px">
-      <div class="edge-rule size">
-        <div class="edge-rule-head">📏 Size of today <span class="muted" id="sizeAsOf"></span></div>
-        <div class="edge-rule-body" id="sizeBody">loading...</div>
-        <div class="size-bands" id="sizeBands"></div>
-        <div class="edge-note" id="sizeNote" style="margin-top:6px"></div>
-      </div>
-      <div class="edge-rule flow">
-        <div class="edge-rule-head">🧪 Options-flow test <span class="muted">(does big-money flow predict anything?)</span></div>
-        <div class="edge-rule-body" id="flowBody">loading...</div>
-        <div class="edge-table-wrap" style="margin:6px 0 0"><table class="edge-table" style="min-width:0"><tbody id="flowRecent"></tbody></table></div>
-      </div>
-    </div>
-
-    <div class="edge-cols">
-      <div>
-        <div class="edge-h">Scorecard — how often the 8pm call was right</div>
-        <div id="edgeScorecard">--</div>
-      </div>
-      <div>
-        <div class="edge-h">Last 10 days</div>
-        <div class="edge-table-wrap" style="margin-bottom:0"><table class="edge-table" style="min-width:0">
-          <thead><tr><th>date</th><th>8pm call</th><th>day closed</th><th>right?</th></tr></thead>
-          <tbody id="edgeRecent"></tbody>
-        </table></div>
-        <div class="edge-note" id="edgeForward" style="margin-top:8px">--</div>
-      </div>
-    </div>
-
-    <details class="edge-details">
-      <summary>Details for the curious (full statistics)</summary>
-      <div class="edge-verdict" id="edgeVerdict" style="margin-top:10px">--</div>
-      <div class="edge-table-wrap">
-        <table class="edge-table">
-          <thead><tr><th>question</th><th>bullish calls right</th><th>bearish calls right</th><th>coin-flip rate</th><th>verdict</th></tr></thead>
-          <tbody id="edgeTableBody"></tbody>
-        </table>
-      </div>
-      <div class="edge-note">How it's built: every day since May 2024 the score is rebuilt from hourly prices that were already known at 8pm SGT, using the same formula as above, then compared with what SPY actually did. "Right" = SPY moved the way the call pointed. Coin-flip rate = how often SPY moved that way on any day anyway. "Edge" only when the 95% range sits fully above the coin-flip rate. Days from <span id="edgeFwdSince"></span> onward are a live test the method never saw.</div>
-    </details>
-  </div>
 
   <div class="section-heading"><h2>Reference Points</h2><span class="section-heading-sub">informational only — gold and bitcoin below are context, not scored into Part I or Part II</span><div class="section-heading-line"></div></div>
   <!-- NAAIM SECTION START — see fetch-naaim.yml header for full removal instructions -->
