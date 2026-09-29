@@ -120,6 +120,27 @@
   .edge-pill.yes { background: var(--green-dim); color: #15803d; }
   .edge-pill.no { background: var(--yellow-dim); color: #b45309; }
   .edge-pill.rev { background: var(--red-dim); color: #b91c1c; }
+  .edge-today { font-size: 17px; line-height: 1.5; padding: 12px 14px; border-radius: 10px; background: var(--bg); margin-bottom: 12px; color: var(--text-primary); }
+  .edge-today .big { font-weight: 800; }
+  .edge-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 900px) { .edge-rules { grid-template-columns: 1fr; } }
+  .edge-rule { border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; }
+  .edge-rule.good { border-left: 4px solid var(--green); }
+  .edge-rule.bad { border-left: 4px solid var(--red); }
+  .edge-rule.tip { border-left: 4px solid #3b82f6; }
+  .edge-rule-head { font-weight: 700; font-size: 14px; margin-bottom: 5px; color: var(--text-primary); }
+  .edge-rule-body { font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+  .edge-rule-body strong { color: var(--text-primary); }
+  .muted { color: var(--text-muted); font-size: 12px; }
+  .sc-row { margin-bottom: 11px; }
+  .sc-label { font-size: 13px; color: var(--text-primary); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+  .sc-label b { font-variant-numeric: tabular-nums; }
+  .sc-track { position: relative; height: 10px; border-radius: 5px; background: #e7eaee; overflow: hidden; }
+  .sc-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+  .sc-coin { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-primary); opacity: 0.55; }
+  .sc-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .edge-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .edge-details summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
   .edge-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 760px) { .edge-cols { grid-template-columns: 1fr; } }
   .edge-h { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin: 2px 0 6px; }
@@ -545,30 +566,53 @@
 
   <div class="edge-bar" id="edgeBar">
     <div class="edge-title-row">
-      <span class="edge-title">Edge Tracker <span class="edge-sub">— does the 8pm SGT score predict anything? graded daily after the close</span></span>
+      <span class="edge-title">How to use the score <span class="edge-sub">— checked against every trading day since May 2024</span></span>
       <span class="edge-status" id="edgeStatus">loading...</span>
     </div>
-    <div class="edge-verdict" id="edgeVerdict">--</div>
-    <div class="edge-table-wrap">
-      <table class="edge-table">
-        <thead><tr><th>question</th><th>bullish calls right</th><th>bearish calls right</th><th>coin-flip rate</th><th>verdict</th></tr></thead>
-        <tbody id="edgeTableBody"></tbody>
-      </table>
+
+    <div class="edge-today" id="edgeToday">--</div>
+
+    <div class="edge-rules">
+      <div class="edge-rule good">
+        <div class="edge-rule-head">✅ Use it to know the likely colour of the day</div>
+        <div class="edge-rule-body" id="edgeRule1">--</div>
+      </div>
+      <div class="edge-rule bad">
+        <div class="edge-rule-head">❌ Don't buy or short because of it</div>
+        <div class="edge-rule-body" id="edgeRule2">--</div>
+      </div>
+      <div class="edge-rule tip">
+        <div class="edge-rule-head">⏱ Want a stronger call? Check again at 10:30pm SGT</div>
+        <div class="edge-rule-body">One hour after the open, look at SPY vs yesterday's close. If it's <strong>more than 0.5% above</strong>, the day finished green about <strong>9 times out of 10</strong>; <strong>more than 0.5% below</strong>, red about 9 times out of 10. That happens roughly 1 day in 3. If it's closer than 0.5%, it's only 3 out of 4. <span class="muted">(Tested on 729 days since Oct 2023. Like the 8pm score, this tells you the day's colour — it doesn't predict the next move.)</span></div>
+      </div>
     </div>
+
     <div class="edge-cols">
       <div>
-        <div class="edge-h">Live forward test <span class="muted" id="edgeFwdSince"></span></div>
-        <div class="edge-note" id="edgeForward">--</div>
+        <div class="edge-h">Scorecard — how often the 8pm call was right</div>
+        <div id="edgeScorecard">--</div>
       </div>
       <div>
-        <div class="edge-h">Last 10 sessions (8pm SGT score)</div>
+        <div class="edge-h">Last 10 days</div>
         <div class="edge-table-wrap" style="margin-bottom:0"><table class="edge-table" style="min-width:0">
-          <thead><tr><th>date</th><th>score</th><th>close vs prev</th><th>8pm→close</th></tr></thead>
+          <thead><tr><th>date</th><th>8pm call</th><th>day closed</th><th>right?</th></tr></thead>
           <tbody id="edgeRecent"></tbody>
         </table></div>
+        <div class="edge-note" id="edgeForward" style="margin-top:8px">--</div>
       </div>
     </div>
-    <div class="edge-note" style="margin-top:10px">How it's built: every day since May 2024 the score is rebuilt from hourly bars that had already closed by 8pm SGT, using the same formula and weights as above (TNX skipped before 8:20am ET; MOO and volume proxy not included). "Right" = SPY moved the way the call pointed. Coin-flip rate = how often SPY moved that way anyway on any day. A verdict of edge needs the 95% range to sit fully above the coin-flip rate.</div>
+
+    <details class="edge-details">
+      <summary>Details for the curious (full statistics)</summary>
+      <div class="edge-verdict" id="edgeVerdict" style="margin-top:10px">--</div>
+      <div class="edge-table-wrap">
+        <table class="edge-table">
+          <thead><tr><th>question</th><th>bullish calls right</th><th>bearish calls right</th><th>coin-flip rate</th><th>verdict</th></tr></thead>
+          <tbody id="edgeTableBody"></tbody>
+        </table>
+      </div>
+      <div class="edge-note">How it's built: every day since May 2024 the score is rebuilt from hourly prices that were already known at 8pm SGT, using the same formula as above, then compared with what SPY actually did. "Right" = SPY moved the way the call pointed. Coin-flip rate = how often SPY moved that way on any day anyway. "Edge" only when the 95% range sits fully above the coin-flip rate. Days from <span id="edgeFwdSince"></span> onward are a live test the method never saw.</div>
+    </details>
   </div>
 
   <div class="section-heading"><h2>Reference Points</h2><span class="section-heading-sub">informational only — gold and bitcoin below are context, not scored into Part I or Part II</span><div class="section-heading-line"></div></div>
@@ -1105,7 +1149,23 @@ function edgeLine(dir, lead) {
   if (!st) return lead + ' — see Edge Tracker below';
   const rd = st.red_day[dir], sc = st.snap_close.signal_days;
   const colour = dir === 'bull' ? 'green' : 'red';
-  return lead + ' — SPY closed ' + colour + ' on ' + pct(rd.hit) + ' of past days like this, but that move was mostly already priced in: from 8pm SGT to the close these calls were right ' + pct(sc.hit) + ' of the time';
+  return lead + ' — likely a ' + colour + ' day (' + Math.round(rd.hit * 10) + ' in 10 past days like this). Already priced in, so not a trade signal.';
+}
+
+let LAST_BIAS_SCORE = null;
+function renderEdgeToday() {
+  const el = document.getElementById('edgeToday');
+  if (!el || LAST_BIAS_SCORE === null) return;
+  const s = LAST_BIAS_SCORE;
+  const st = EDGE && EDGE.backtest && EDGE.backtest.stats && EDGE.backtest.stats.sgt8pm;
+  const n = (x) => st ? Math.round(x * 10) : '?';
+  if (s > 60) {
+    el.innerHTML = 'Right now the score is <span class="big" style="color:#15803d">' + s + ' — leaning GREEN</span>. On past days like this, the market closed green about <strong>' + (st ? n(st.red_day.bull.hit) : '7–8') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to buy now.';
+  } else if (s < 40) {
+    el.innerHTML = 'Right now the score is <span class="big" style="color:#b91c1c">' + s + ' — leaning RED</span>. On past days like this, the market closed red about <strong>' + (st ? n(st.red_day.bear.hit) : '6–7') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to short now.';
+  } else {
+    el.innerHTML = 'Right now the score is <span class="big" style="color:#b45309">' + s + ' — no call</span>. Nothing big happened overnight, so treat today like any normal day (green a bit over half the time). Check again at 10:30pm SGT.';
+  }
 }
 
 function verdictFor(cell, base) {
@@ -1136,42 +1196,57 @@ async function loadEdgeData() {
   }
   const bt = EDGE.backtest, st = bt.stats.sgt8pm;
   const age = hoursAgo(EDGE._lastUpdated);
-  statusEl.textContent = bt.days + ' sessions (' + bt.from + ' → ' + bt.to + ') · graded ' + (age < 1 ? Math.round(age * 60) + 'm' : Math.round(age) + 'h') + ' ago';
-
+  statusEl.textContent = 'last checked ' + (age < 1 ? Math.round(age * 60) + ' min' : Math.round(age) + 'h') + ' ago';
   const rd = st.red_day, sc = st.snap_close.signal_days;
-  document.getElementById('edgeVerdict').innerHTML =
-    '<strong>As a red/green-day label it works:</strong> bullish mornings closed green ' + pct(rd.bull.hit) + ' of the time and bearish mornings closed red ' + pct(rd.bear.hit) +
-    ', against ' + pct(rd.base_up) + ' / ' + pct(1 - rd.base_up) + ' on an average day. ' +
-    '<strong>As a prediction it does not:</strong> that edge is the overnight move already visible at 8pm SGT. Acting on it at 8pm SGT, the call was right ' + pct(sc.hit) +
-    ' of the time (95% range ' + pct(sc.ci95[0]) + '–' + pct(sc.ci95[1]) + ') — a coin flip. S&amp;P futures alone track the opening gap better than the full score (' +
-    st.gap.rho_es_only.toFixed(2) + ' vs ' + st.gap.rho_score.toFixed(2) + ' rank correlation).';
+  const outOf10 = (x) => Math.round(x * 10);
 
+  document.getElementById('edgeRule1').innerHTML =
+    'Score <strong>above 60</strong>: the day closed <strong>green ' + outOf10(rd.bull.hit) + ' times out of 10</strong>.<br>' +
+    'Score <strong>below 40</strong>: the day closed <strong>red ' + outOf10(rd.bear.hit) + ' times out of 10</strong>.<br>' +
+    'Score <strong>40–60</strong>: no call — treat it as a normal day (green about ' + outOf10(rd.base_up) + ' in 10).';
+  document.getElementById('edgeRule2').innerHTML =
+    'The score reads moves that <strong>already happened</strong> overnight — they\'re already in the price. ' +
+    'If you had bought on a high score (or shorted on a low one) at 8pm SGT and held to the close, you\'d have been right only <strong>' + pct(sc.hit) + '</strong> of the time: <strong>a coin toss</strong>. ' +
+    'Use it for context (e.g. don\'t expect a green day when it says red), not as a trade trigger.';
+
+  const bar = (label, hit, n, sub, good) =>
+    '<div class="sc-row"><div class="sc-label"><span>' + label + '</span><b>' + pct(hit) + '</b></div>' +
+    '<div class="sc-track"><div class="sc-fill" style="width:' + (100 * hit).toFixed(1) + '%;background:' + (good ? 'var(--green)' : 'var(--yellow)') + '"></div><div class="sc-coin" style="left:50%"></div></div>' +
+    '<div class="sc-sub">' + sub + ' · ' + n + ' days</div></div>';
+  document.getElementById('edgeScorecard').innerHTML =
+    bar('Guessing the colour of the day', rd.signal_days.hit, rd.signal_days.n, 'better than a coin toss (black line = 50%)', true) +
+    bar('Guessing the move <em>after</em> 8pm SGT', sc.hit, sc.n, 'same as a coin toss — no trading edge', false);
+
+  const fwd = EDGE.forward;
+  document.getElementById('edgeFwdSince').textContent = EDGE.forward_start;
+  if (!fwd.stats) {
+    document.getElementById('edgeForward').innerHTML = '<strong>Live test:</strong> started ' + EDGE.forward_start + '. Each weekday after the US close the morning call is checked automatically. Give it a few months before trusting the live numbers.';
+  } else {
+    const f = fwd.stats.sgt8pm.red_day.signal_days, g = fwd.stats.sgt8pm.snap_close.signal_days;
+    document.getElementById('edgeForward').innerHTML = '<strong>Live test since ' + EDGE.forward_start + ':</strong> day colour right ' +
+      (f ? f.n ? Math.round(f.hit * f.n) + ' of ' + f.n + ' calls' : 'no calls yet' : 'no calls yet') +
+      (g && g.n ? '; after-8pm move right ' + Math.round(g.hit * g.n) + ' of ' + g.n : '') + '. Too early to judge until ~50 calls.';
+  }
+
+  const tag = (x) => x > 0 ? '<span style="color:#15803d;font-weight:600">green</span>' : '<span style="color:#b91c1c;font-weight:600">red</span>';
+  document.getElementById('edgeRecent').innerHTML = EDGE.recent.slice(0, 10).map(r => {
+    const call = r.score > 60 ? 'green' : r.score < 40 ? 'red' : null;
+    const callTxt = call ? tag(call === 'green' ? 1 : -1) + ' <span class="muted">(' + r.score + ')</span>' : '<span class="muted">no call (' + r.score + ')</span>';
+    const right = call ? (((call === 'green') === (r.red_day > 0)) ? '✅' : '❌') : '<span class="muted">–</span>';
+    return '<tr><td>' + new Date(r.date + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</td><td>' + callTxt + '</td><td>' + tag(r.red_day) +
+      ' <span class="muted">' + (r.red_day >= 0 ? '+' : '') + (100 * r.red_day).toFixed(1) + '%</span></td><td>' + right + '</td></tr>';
+  }).join('');
+
+  document.getElementById('edgeVerdict').innerHTML =
+    'Bullish mornings closed green ' + pct(rd.bull.hit) + ' and bearish mornings closed red ' + pct(rd.bear.hit) + ' (normal days: ' + pct(rd.base_up) + ' green). ' +
+    'From 8pm SGT to the close the calls were right ' + pct(sc.hit) + ' (95% range ' + pct(sc.ci95[0]) + '–' + pct(sc.ci95[1]) + '). ' +
+    'S&amp;P futures alone track the opening gap better than the full score (' + st.gap.rho_es_only.toFixed(2) + ' vs ' + st.gap.rho_score.toFixed(2) + ' rank correlation). Based on ' + bt.days + ' sessions, ' + bt.from + ' → ' + bt.to + '.';
   document.getElementById('edgeTableBody').innerHTML =
     edgeRowHTML('Red or green close?', 'SPY close vs prior close — includes the overnight move', st.red_day) +
     edgeRowHTML('Gap at the open', 'SPY open vs prior close — mostly visible at 8pm SGT already', st.gap, true) +
     edgeRowHTML('<strong>8pm SGT → close</strong>', 'the tradeable part: what happens AFTER you read it', st.snap_close) +
     edgeRowHTML('Open → close', 'the cash session after the gap', st.open_close);
-
-  const fwd = EDGE.forward;
-  document.getElementById('edgeFwdSince').textContent = '(method frozen ' + EDGE.forward_start + ')';
-  if (!fwd.stats) {
-    document.getElementById('edgeForward').innerHTML = fwd.days + ' session(s) graded so far. Results show from 3 sessions; treat anything under ~100 non-neutral days as noise.';
-  } else {
-    const f = fwd.stats.sgt8pm;
-    document.getElementById('edgeForward').innerHTML = fwd.days + ' sessions since the method was frozen (' + f.buckets.bull + ' bullish, ' + f.buckets.bear + ' bearish calls).<br>' +
-      'Red/green close right: ' + (f.red_day.signal_days ? pct(f.red_day.signal_days.hit) + ' of ' + f.red_day.signal_days.n : '--') + '<br>' +
-      '8pm SGT → close right: ' + (f.snap_close.signal_days ? pct(f.snap_close.signal_days.hit) + ' of ' + f.snap_close.signal_days.n + ' (95% ' + pct(f.snap_close.signal_days.ci95[0]) + '–' + pct(f.snap_close.signal_days.ci95[1]) + ')' : '--') +
-      '<br><span class="muted">Treat anything under ~100 non-neutral days as noise.</span>';
-  }
-
-  const sgn = (x, d = 2) => (x >= 0 ? '+' : '') + (100 * x).toFixed(d) + '%';
-  const col = (x) => 'color:' + (x > 0 ? '#15803d' : x < 0 ? '#b91c1c' : 'inherit');
-  document.getElementById('edgeRecent').innerHTML = EDGE.recent.slice(0, 10).map(r => {
-    const b = r.score > 60 ? 'bull' : r.score < 40 ? 'bear' : '';
-    const right = b ? ((b === 'bull') === (r.red_day > 0) ? ' ✓' : ' ✗') : '';
-    return '<tr><td>' + r.date.slice(5) + '</td><td class="num">' + r.score + (b ? ' <span class="muted">' + b + '</span>' : '') +
-      '</td><td class="num" style="' + col(r.red_day) + '">' + sgn(r.red_day) + right + '</td><td class="num" style="' + col(r.snap_close) + '">' + sgn(r.snap_close) + '</td></tr>';
-  }).join('');
+  renderEdgeToday();
 
   recomputeAndRenderBias(); // refresh the bias text with the numbers
 }
@@ -1476,6 +1551,8 @@ function recomputeAndRenderBias() {
   if (combined.length > 0) {
     const bias = computeBiasScore(combined);
     updateBiasBar(bias);
+    LAST_BIAS_SCORE = bias.score;
+    renderEdgeToday();
   }
 }
 
