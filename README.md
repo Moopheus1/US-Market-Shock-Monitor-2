@@ -23,6 +23,12 @@ Read: the score is a good summary of the overnight move, so it labels red/green 
 
 The older v1 claim (0.555 correlation, 78–96% hit rates) compared the score with the gap it was partly built from, using daily bars; it is withdrawn here.
 
+## Size of today (GEX)
+`scripts/gex_size.py` (hourly via `fetch-gex.yml`) ranks the latest free SqueezeMetrics GEX against its past year and turns it into an expected move size for the next session. 15-year test, no look-ahead: lowest-GEX band averaged 1.35× a normal day, highest 0.84×, and the pattern held in 2012–19, 2020–24 and 2025–now. It predicts **size, not direction** (next-day green rate is ~54% in every band).
+
+## Options-flow forward test
+A scheduled task logs big ($100k+) SPY/QQQ options flow from the Rallies connector into `data/flow_log.json` twice each weekday (8:40am ET pre-open, 10:35am ET after the first hour). `edge_tracker.py` grades it after the close. No flow history is available for free, so this can only be tested going forward; treat results as noise until ~50 graded days.
+
 ## Changes vs v1
 1. **Score = futures, VIX, yield, dollar, crude only.** The MOO imbalance entry box is removed entirely; the buy/sell volume proxy is shown as context, not scored. Neither exists at the 8pm SGT read, neither was tested, and including them made the score mean different things at different times of day.
 2. **Stale 10Y yield fixed.** ^TNX has no data before 08:20 ET; v1 then scored *yesterday's* yield move as overnight news. v2 skips TNX until it trades.

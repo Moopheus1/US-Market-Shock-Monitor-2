@@ -118,6 +118,13 @@
   .sc-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
   .sc-coin { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-primary); opacity: 0.55; }
   .sc-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .edge-rule.size { border-left: 4px solid #8b5cf6; }
+  .edge-rule.flow { border-left: 4px solid #0ea5e9; }
+  .size-bands { display: flex; gap: 4px; margin-top: 10px; }
+  .size-band { flex: 1; text-align: center; font-size: 11px; line-height: 1.3; padding: 6px 2px; border-radius: 6px; background: var(--bg); color: var(--text-muted); border: 1px solid transparent; }
+  .size-band b { display: block; font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .size-band.on { border-color: #8b5cf6; background: rgba(139,92,246,0.08); color: var(--text-primary); }
+  .size-band.on b { color: #6d28d9; }
   .edge-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
   .edge-details summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
   .edge-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -543,6 +550,20 @@
       <div class="edge-rule tip">
         <div class="edge-rule-head">⏱ Want a stronger call? Check again at 10:30pm SGT</div>
         <div class="edge-rule-body">One hour after the open, look at SPY vs yesterday's close. If it's <strong>more than 0.5% above</strong>, the day finished green about <strong>9 times out of 10</strong>; <strong>more than 0.5% below</strong>, red about 9 times out of 10. That happens roughly 1 day in 3. If it's closer than 0.5%, it's only 3 out of 4. <span class="muted">(Tested on 729 days since Oct 2023. Like the 8pm score, this tells you the day's colour — it doesn't predict the next move.)</span></div>
+      </div>
+    </div>
+
+    <div class="edge-cols" style="margin-bottom:14px">
+      <div class="edge-rule size">
+        <div class="edge-rule-head">📏 Size of today <span class="muted" id="sizeAsOf"></span></div>
+        <div class="edge-rule-body" id="sizeBody">loading...</div>
+        <div class="size-bands" id="sizeBands"></div>
+        <div class="edge-note" id="sizeNote" style="margin-top:6px"></div>
+      </div>
+      <div class="edge-rule flow">
+        <div class="edge-rule-head">🧪 Options-flow test <span class="muted">(does big-money flow predict anything?)</span></div>
+        <div class="edge-rule-body" id="flowBody">loading...</div>
+        <div class="edge-table-wrap" style="margin:6px 0 0"><table class="edge-table" style="min-width:0"><tbody id="flowRecent"></tbody></table></div>
       </div>
     </div>
 
@@ -1142,6 +1163,52 @@ function edgeRowHTML(label, sub, r, alreadyPriced) {
     '</td><td class="num">' + pct(r.base_up) + ' up / ' + pct(1 - r.base_up) + ' down</td><td>bull ' + vb + '<br>bear ' + vr + '</td></tr>';
 }
 
+async function loadSizeData() {
+  let G = null;
+  try {
+    const res = await fetch('data/gex_size.json', { cache: 'no-store' });
+    if (res.ok) G = await res.json();
+  } catch (e) {}
+  const body = document.getElementById('sizeBody');
+  if (!G) { body.textContent = 'unavailable — run the "GEX size of today" workflow in Actions'; return; }
+  const L = G.latest, x = (v) => v.toFixed(2) + '×';
+  const nextDay = new Date(L.gex_date + 'T12:00:00Z'); nextDay.setUTCDate(nextDay.getUTCDate() + (nextDay.getUTCDay() === 5 ? 3 : 1));
+  document.getElementById('sizeAsOf').textContent = '(for the ' + nextDay.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' US session)';
+  const colour = L.band <= 1 ? '#6d28d9' : L.band >= 3 ? '#0f766e' : 'var(--text-primary)';
+  body.innerHTML = '<span style="font-size:16px;font-weight:800;color:' + colour + '">' + L.label + '</span><br>' +
+    'Expect a move of about <strong>±' + L.expected_move_pct.toFixed(2) + '%</strong> (≈' + Math.round(L.expected_move_points) + ' S&amp;P points). A normal day lately is ±' + L.normal_move_pct.toFixed(2) + '%.<br>' +
+    'This says <strong>how much</strong> the market is likely to move, <strong>not which way</strong>. Use it for position size and stop distance: on a big day, trade smaller with wider stops; on a quiet day, don\'t expect big follow-through.';
+  document.getElementById('sizeBands').innerHTML = G.bands.map((b, k) =>
+    '<div class="size-band' + (k === L.band ? ' on' : '') + '"><b>' + x(b.avg_size) + '</b>' + ['big', 'bigger', 'normal', 'quieter', 'quiet'][k] + '</div>').join('');
+  const hits = G.recent.slice(0, 10).filter(r => r.band !== 2);
+  const right = hits.filter(r => (r.band < 2) === (r.actual > 1)).length;
+  document.getElementById('sizeNote').innerHTML = 'Based on dealer gamma (GEX) vs its past year. Tested on ' + G.test_days.toLocaleString() + ' days since ' + G.test_from.slice(0, 4) +
+    ' — the pattern held in 2012–19, 2020–24 and 2025–now. Boxes show the average day size in each band (1.0× = normal). ' +
+    '<strong>It\'s a tilt, not a promise:</strong> on "big" days the market moved more than normal ' + pct(G.bands[0].p_bigger) + ' of the time and more than double normal ' + pct(G.bands[0].p_double) +
+    '; on "quiet" days only ' + pct(G.bands[4].p_bigger) + ' and ' + pct(G.bands[4].p_double) + '. Any single day can surprise; over weeks it evens out. ' +
+    (hits.length ? 'Last 10 sessions: ' + right + ' of ' + hits.length + ' big/quiet calls matched.' : '');
+}
+
+function renderFlow() {
+  const body = document.getElementById('flowBody');
+  const F = EDGE && EDGE.flow;
+  if (!F || !F.rows_logged) {
+    body.innerHTML = 'Each weekday a logger records big SPY options trades ($100k+) twice: <strong>before the open</strong> (yesterday\'s flow) and <strong>after the first hour</strong>. After the close, each reading is checked: did bullish flow come before a green day / a rising afternoon? ' +
+      '<br><strong>No results yet</strong> — the first readings arrive on the next trading day. Treat it as a coin toss until it has ~50 graded days.';
+    return;
+  }
+  const P = F.preopen, H = F.firsthour;
+  const line = (lbl, c) => c && c.n ? lbl + ': right <strong>' + Math.round(c.hit * c.n) + ' of ' + c.n + '</strong> (' + pct(c.hit) + (c.n >= 20 ? ', 95% range ' + pct(c.ci95[0]) + '–' + pct(c.ci95[1]) : '') + ')' : lbl + ': not graded yet';
+  const verdict = (c) => !c || c.n < 50 ? 'too early to judge (needs ~50 days)' : c.ci95[0] > 0.5 ? '<span class="edge-pill yes">edge</span>' : c.ci95[1] < 0.5 ? '<span class="edge-pill rev">opposite</span>' : '<span class="edge-pill no">no edge</span>';
+  body.innerHTML = line('Pre-open flow → day colour', P.colour) + '<br>' + line('Pre-open flow → move after 9pm SGT', P.after) + '<br>' +
+    line('First-hour flow → rest of day', H.rest) + '<br>Verdict: ' + verdict(H.rest.n > P.after.n ? H.rest : P.after) +
+    '<br><span class="muted">Coin toss = 50%. Logging since ' + (F.first_logged || '').slice(0, 10) + '.</span>';
+  document.getElementById('flowRecent').innerHTML = F.recent.slice(0, 6).map(r =>
+    '<tr><td>' + r.session.slice(5) + '</td><td class="muted">' + (r.run === 'preopen' ? 'pre-open' : 'first hour') + '</td><td>' +
+    (r.net_ex0dte > 0 ? '<span style="color:#15803d">bullish</span>' : '<span style="color:#b91c1c">bearish</span>') +
+    '</td><td>' + (r.right === null || r.right === undefined ? '<span class="muted">pending</span>' : r.right ? '✅' : '❌') + '</td></tr>').join('');
+}
+
 async function loadEdgeData() {
   const statusEl = document.getElementById('edgeStatus');
   try {
@@ -1206,6 +1273,7 @@ async function loadEdgeData() {
     edgeRowHTML('<strong>8pm SGT → close</strong>', 'the tradeable part: what happens AFTER you read it', st.snap_close) +
     edgeRowHTML('Open → close', 'the cash session after the gap', st.open_close);
   renderEdgeToday();
+  renderFlow();
 
   recomputeAndRenderBias(); // refresh the bias text with the numbers
 }
@@ -2138,6 +2206,7 @@ async function manualRefresh() {
       loadFREDData(),
       loadBreadthData(),
       loadEdgeData(),
+      loadSizeData(),
       loadNAAIMData(),
       loadGoldData(),
       loadBTCData(),
@@ -2194,6 +2263,7 @@ function renderPageLoadedTimestamp() {
   await loadFREDData();
   await loadBreadthData();
   await loadEdgeData();
+  await loadSizeData();
   await loadNAAIMData();
   await loadGoldData();
   await loadBTCData();

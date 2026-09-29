@@ -1,0 +1,268 @@
+{
+ "_lastUpdated": "2026-09-29T16:31:23Z",
+ "_source": "SqueezeMetrics DIX.csv (free, daily)",
+ "latest": {
+  "gex_date": "2026-09-28",
+  "gex": 4681681068.899997,
+  "pct_vs_past_year": 0.29365079365079366,
+  "band": 1,
+  "band_name": "20-40%",
+  "label": "Somewhat bigger than normal",
+  "normal_move_pct": 0.5844702597387319,
+  "sp500_close": 7683.69,
+  "expected_size": 1.2219840161773794,
+  "expected_move_pct": 0.7142133153317717,
+  "expected_move_points": 54.8779370888158,
+  "p_bigger_than_normal": 0.47479674796747967
+ },
+ "bands": [
+  {
+   "name": "lowest 20%",
+   "label": "BIG day likely",
+   "n": 688,
+   "avg_size": 1.3540381208031558,
+   "p_bigger": 0.5421511627906976,
+   "p_double": 0.22965116279069767
+  },
+  {
+   "name": "20-40%",
+   "label": "Somewhat bigger than normal",
+   "n": 615,
+   "avg_size": 1.2219840161773794,
+   "p_bigger": 0.47479674796747967,
+   "p_double": 0.19349593495934958
+  },
+  {
+   "name": "middle",
+   "label": "Normal-sized day",
+   "n": 668,
+   "avg_size": 1.024647834600739,
+   "p_bigger": 0.39520958083832336,
+   "p_double": 0.1347305389221557
+  },
+  {
+   "name": "60-80%",
+   "label": "Somewhat quieter than normal",
+   "n": 669,
+   "avg_size": 0.9735190385195021,
+   "p_bigger": 0.3692077727952167,
+   "p_double": 0.1031390134529148
+  },
+  {
+   "name": "highest 20%",
+   "label": "QUIET day likely",
+   "n": 981,
+   "avg_size": 0.8410891337159626,
+   "p_bigger": 0.29867482161060144,
+   "p_double": 0.07849133537206932
+  }
+ ],
+ "by_period": {
+  "2012-2019": [
+   {
+    "n": 374,
+    "avg_size": 1.3591463254541456,
+    "p_bigger": 0.5320855614973262,
+    "p_double": 0.22192513368983957
+   },
+   {
+    "n": 335,
+    "avg_size": 1.252227143039135,
+    "p_bigger": 0.48955223880597015,
+    "p_double": 0.20597014925373133
+   },
+   {
+    "n": 373,
+    "avg_size": 1.0224445162237492,
+    "p_bigger": 0.3699731903485255,
+    "p_double": 0.15013404825737264
+   },
+   {
+    "n": 329,
+    "avg_size": 1.012986620911879,
+    "p_bigger": 0.3738601823708207,
+    "p_double": 0.12462006079027356
+   },
+   {
+    "n": 518,
+    "avg_size": 0.8032014609204522,
+    "p_bigger": 0.26640926640926643,
+    "p_double": 0.07722007722007722
+   }
+  ],
+  "2020-2024": [
+   {
+    "n": 218,
+    "avg_size": 1.3535421477752978,
+    "p_bigger": 0.5779816513761468,
+    "p_double": 0.23394495412844038
+   },
+   {
+    "n": 199,
+    "avg_size": 1.1956168833235161,
+    "p_bigger": 0.4472361809045226,
+    "p_double": 0.18592964824120603
+   },
+   {
+    "n": 217,
+    "avg_size": 1.0263794780473297,
+    "p_bigger": 0.423963133640553,
+    "p_double": 0.11981566820276497
+   },
+   {
+    "n": 266,
+    "avg_size": 0.9639402407624272,
+    "p_bigger": 0.38721804511278196,
+    "p_double": 0.09022556390977443
+   },
+   {
+    "n": 358,
+    "avg_size": 0.8868561929506104,
+    "p_bigger": 0.3324022346368715,
+    "p_double": 0.08379888268156424
+   }
+  ],
+  "2025-now": [
+   {
+    "n": 96,
+    "avg_size": 1.3352636789344359,
+    "p_bigger": 0.5,
+    "p_double": 0.25
+   },
+   {
+    "n": 81,
+    "avg_size": 1.1616829290073882,
+    "p_bigger": 0.48148148148148145,
+    "p_double": 0.16049382716049382
+   },
+   {
+    "n": 78,
+    "avg_size": 1.0303666951995478,
+    "p_bigger": 0.4358974358974359,
+    "p_double": 0.10256410256410256
+   },
+   {
+    "n": 74,
+    "avg_size": 0.8324801952261224,
+    "p_bigger": 0.28378378378378377,
+    "p_double": 0.05405405405405406
+   },
+   {
+    "n": 105,
+    "avg_size": 0.8719577746880623,
+    "p_bigger": 0.34285714285714286,
+    "p_double": 0.06666666666666667
+   }
+  ]
+ },
+ "test_days": 3621,
+ "test_from": "2012-05-02",
+ "test_to": "2026-09-28",
+ "recent": [
+  {
+   "session": "2026-09-28",
+   "band": 3,
+   "label": "Somewhat quieter than normal",
+   "expected": 0.9735190385195021,
+   "actual": 1.381289163986155
+  },
+  {
+   "session": "2026-09-25",
+   "band": 3,
+   "label": "Somewhat quieter than normal",
+   "expected": 0.9735190385195021,
+   "actual": 0.8962635506202297
+  },
+  {
+   "session": "2026-09-24",
+   "band": 2,
+   "label": "Normal-sized day",
+   "expected": 1.024647834600739,
+   "actual": 0.04335771361764144
+  },
+  {
+   "session": "2026-09-23",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8410891337159626,
+   "actual": 1.3802563082832773
+  },
+  {
+   "session": "2026-09-22",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8410891337159626,
+   "actual": 0.0013777705698321786
+  },
+  {
+   "session": "2026-09-21",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8410891337159626,
+   "actual": 2.9387053816862774
+  },
+  {
+   "session": "2026-09-18",
+   "band": 3,
+   "label": "Somewhat quieter than normal",
+   "expected": 0.9735190385195021,
+   "actual": 0.3072137339266857
+  },
+  {
+   "session": "2026-09-17",
+   "band": 1,
+   "label": "Somewhat bigger than normal",
+   "expected": 1.2219840161773794,
+   "actual": 2.2919037084079714
+  },
+  {
+   "session": "2026-09-16",
+   "band": 2,
+   "label": "Normal-sized day",
+   "expected": 1.024647834600739,
+   "actual": 0.879116433225059
+  },
+  {
+   "session": "2026-09-15",
+   "band": 1,
+   "label": "Somewhat bigger than normal",
+   "expected": 1.2219840161773794,
+   "actual": 0.8773598422006477
+  },
+  {
+   "session": "2026-09-14",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8410891337159626,
+   "actual": 0.9730035640169163
+  },
+  {
+   "session": "2026-09-11",
+   "band": 2,
+   "label": "Normal-sized day",
+   "expected": 1.024647834600739,
+   "actual": 1.7685402244662938
+  },
+  {
+   "session": "2026-09-10",
+   "band": 1,
+   "label": "Somewhat bigger than normal",
+   "expected": 1.2219840161773794,
+   "actual": 1.244049995578728
+  },
+  {
+   "session": "2026-09-09",
+   "band": 2,
+   "label": "Normal-sized day",
+   "expected": 1.024647834600739,
+   "actual": 1.0482876999587352
+  },
+  {
+   "session": "2026-09-08",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8410891337159626,
+   "actual": 1.3405537754995558
+  }
+ ]
+}

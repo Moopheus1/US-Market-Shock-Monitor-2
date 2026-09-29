@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-09-29T15:44:59Z",
+ "_lastUpdated": "2026-09-29T16:32:17Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -281,6 +281,55 @@
  "forward": {
   "days": 0,
   "stats": null
+ },
+ "flow": {
+  "first_logged": null,
+  "rows_logged": 0,
+  "preopen": {
+   "colour": {
+    "n": 0,
+    "hit": null,
+    "ci95": [
+     null,
+     null
+    ]
+   },
+   "after": {
+    "n": 0,
+    "hit": null,
+    "ci95": [
+     null,
+     null
+    ]
+   },
+   "colour_all": {
+    "n": 0,
+    "hit": null,
+    "ci95": [
+     null,
+     null
+    ]
+   }
+  },
+  "firsthour": {
+   "rest": {
+    "n": 0,
+    "hit": null,
+    "ci95": [
+     null,
+     null
+    ]
+   },
+   "rest_all": {
+    "n": 0,
+    "hit": null,
+    "ci95": [
+     null,
+     null
+    ]
+   }
+  },
+  "recent": []
  },
  "recent": [
   {

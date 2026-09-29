@@ -30,6 +30,7 @@ from zoneinfo import ZoneInfo
 NY, SG = ZoneInfo("America/New_York"), ZoneInfo("Asia/Singapore")
 FORWARD_START = "2026-09-30"
 ROWS_PATH, SUMMARY_PATH = "data/edge_rows.json", "data/edge_summary.json"
+FLOW_PATH = "data/flow_log.json"  # appended by the scheduled options-flow logger
 # (yahoo ticker, weight, invert) - must match PREMARKET_SYMBOLS in index.html
 SYMS = [("ES=F", 25, False), ("NQ=F", 20, False), ("YM=F", 10, False), ("RTY=F", 10, False),
         ("^VIX", 15, True), ("^TNX", 8, False), ("DX-Y.NYB", 5, False), ("CL=F", 4, False)]
@@ -158,6 +159,73 @@ def summarize(rows):
     return out
 
 
+def grade_flow(rows):
+    """Grade the options-flow forward test (data/flow_log.json).
+
+    preopen rows  (logged ~8:40am ET): previous session's big-money SPY flow.
+        Graded against that day's colour (SPY close vs prior close) and against
+        the move AFTER 9am ET (ES 9am -> 4pm), i.e. what you could still trade.
+    firsthour rows (logged ~10:35am ET): the first hour's flow.
+        Graded against SPY from 10:30am ET to the close.
+    Signal = sign of net bullish-minus-bearish premium EXCLUDING same-day (0DTE) options
+    (0DTE is mostly intraday hedging/noise); the all-expiry sign is graded too.
+    """
+    if not os.path.exists(FLOW_PATH):
+        return None
+    try:
+        log = json.load(open(FLOW_PATH))
+    except Exception:
+        return None
+    by_date = {r["date"]: r for r in rows}
+    spy_h = fetch("SPY", "1h", "730d")
+    q = spy_h["indicators"]["quote"][0]
+    at1030 = {}
+    for t, c in zip(spy_h["timestamp"], q["close"]):
+        d = dt.datetime.fromtimestamp(t, NY)
+        if c is not None and d.strftime("%H:%M") == "09:30":
+            at1030[d.date().isoformat()] = c  # close of the 9:30-10:30 bar
+    spy_d = fetch("SPY", "1d", "2y")
+    qd = spy_d["indicators"]["quote"][0]
+    close = {dt.datetime.fromtimestamp(t, NY).date().isoformat(): c for t, c in zip(spy_d["timestamp"], qd["close"]) if c}
+
+    res = {"preopen": {"colour": [], "after": [], "colour_all": []}, "firsthour": {"rest": [], "rest_all": []}}
+    recent = []
+    for r in log:
+        if r.get("ticker") != "SPY" or r.get("net_ex0dte") is None:
+            continue
+        target = dt.datetime.fromisoformat(r["logged_at_utc"].replace("Z", "+00:00")).astimezone(NY).date().isoformat()
+        sig, sig_all = r["net_ex0dte"] > 0, (r.get("net") or 0) > 0
+        row = by_date.get(target)
+        item = {"session": target, "run": r["run"], "net_ex0dte": r["net_ex0dte"], "truncated": r.get("truncated")}
+        if r["run"] == "preopen" and row:
+            green = row["red_day"] > 0
+            res["preopen"]["colour"].append(sig == green)
+            res["preopen"]["colour_all"].append(sig_all == green)
+            res["preopen"]["after"].append(sig == (row["et9am"]["snap_close"] > 0))
+            item.update(outcome=row["red_day"], right=sig == green)
+        elif r["run"] == "firsthour" and target in at1030 and target in close:
+            rest = close[target] / at1030[target] - 1
+            if dt.datetime.now(NY).date().isoformat() == target and dt.datetime.now(NY).hour < 16:
+                continue  # session not finished
+            res["firsthour"]["rest"].append(sig == (rest > 0))
+            res["firsthour"]["rest_all"].append(sig_all == (rest > 0))
+            item.update(outcome=rest, right=sig == (rest > 0))
+        else:
+            item.update(outcome=None, right=None)  # not graded yet
+        recent.append(item)
+
+    def pack(v):
+        k = sum(v)
+        return {"n": len(v), "hit": k / len(v) if v else None, "ci95": wilson(k, len(v))}
+    return {
+        "first_logged": min((r["logged_at_utc"] for r in log), default=None),
+        "rows_logged": len(log),
+        "preopen": {k: pack(v) for k, v in res["preopen"].items()},
+        "firsthour": {k: pack(v) for k, v in res["firsthour"].items()},
+        "recent": recent[-12:][::-1],
+    }
+
+
 def main():
     stored = {}
     if os.path.exists(ROWS_PATH):
@@ -178,6 +246,7 @@ def main():
         "backtest": {"from": ins[0]["date"] if ins else None, "to": ins[-1]["date"] if ins else None,
                      "days": len(ins), "stats": summarize(ins) if ins else None},
         "forward": {"days": len(fwd), "stats": summarize(fwd) if len(fwd) >= 3 else None},
+        "flow": grade_flow(rows),
         "recent": [{"date": r["date"], "score": r["sgt8pm"]["score"], "score_9am": r["et9am"]["score"],
                     "red_day": r["red_day"], "open_close": r["open_close"],
                     "snap_close": r["sgt8pm"]["snap_close"]} for r in rows[-15:]][::-1],
