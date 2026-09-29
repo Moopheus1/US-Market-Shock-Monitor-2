@@ -103,6 +103,27 @@
   .moo-btn:hover { background: rgba(59,130,246,0.2); }
   @media (max-width: 640px) { .moo-grid { grid-template-columns: repeat(2, 1fr); } .moo-btn { grid-column: 1 / -1; } }
 
+  .edge-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+  .edge-title-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .edge-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); }
+  .edge-sub { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+  .edge-status { font-size: 12px; color: var(--text-muted); }
+  .edge-verdict { font-size: 15px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 12px; }
+  .edge-verdict strong { color: var(--text-primary); }
+  .edge-table-wrap { overflow-x: auto; margin-bottom: 12px; }
+  .edge-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  .edge-table th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .edge-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: top; }
+  .edge-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .edge-table .muted { color: var(--text-muted); font-size: 11px; }
+  .edge-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .edge-pill.yes { background: var(--green-dim); color: #15803d; }
+  .edge-pill.no { background: var(--yellow-dim); color: #b45309; }
+  .edge-pill.rev { background: var(--red-dim); color: #b91c1c; }
+  .edge-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .edge-cols { grid-template-columns: 1fr; } }
+  .edge-h { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin: 2px 0 6px; }
+  .edge-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
   .breadth-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
   .breadth-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
   .breadth-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
@@ -161,6 +182,7 @@
   /* NAAIM SECTION END */
 
   /* GOLD SECTION START — informational only, not scored. See fetch-gold.yml header for removal. */
+  #naaimBar, .glance-card[onclick*="naaimBar"] { display: none !important; }
   .gold-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
   .gold-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
   .gold-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
@@ -349,7 +371,7 @@
   <!-- MOO IMBALANCE — manual entry, not auto-fetched. See index.html comments for why. -->
   <div class="moo-bar" id="mooBar">
     <div class="moo-title-row">
-      <span class="moo-title">MOO imbalance <span class="moo-sub">(paste the whole block from your source, ~9:20-9:30am ET / ~9:20-9:30pm SGT — feeds bias score)</span></span>
+      <span class="moo-title">MOO imbalance <span class="moo-sub">(paste the whole block from your source, ~9:20-9:30am ET / ~9:20-9:30pm SGT — context only in v2 — not scored)</span></span>
       <span class="moo-status" id="mooStatus">not entered yet</span>
     </div>
     <div class="moo-paste-row">
@@ -362,7 +384,7 @@
       <div class="moo-field"><label>Nasdaq 100 (mln)</label><input type="number" step="0.1" id="moo-ndx" placeholder="e.g. -42.7"></div>
       <div class="moo-field"><label>Dow 30 (mln)</label><input type="number" step="0.1" id="moo-dow" placeholder="e.g. -22.1"></div>
       <div class="moo-field"><label>Mag 7 (mln)</label><input type="number" step="0.1" id="moo-mag7" placeholder="e.g. -41.4"></div>
-      <button class="moo-btn" onclick="updateMOOImbalance()">Update &amp; recalc bias</button>
+      <button class="moo-btn" onclick="updateMOOImbalance()">Save MOO figures</button>
     </div>
     <div class="moo-paste-note">The fields above still work individually if you'd rather type them, or if paste parsing misreads something — check the numbers landed correctly before hitting "Update".</div>
   </div>
@@ -469,16 +491,14 @@
       <span class="framework-toggle-arrow">▾</span>
     </div>
     <div class="framework-body">
-      <div class="framework-row"><span class="framework-range" style="color:var(--red)">0–15 strong bear</span><span class="framework-meaning">Futures down + VIX up, one-sided. Reduce risk, raise cash, add hedges.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--red)">16–39 bearish</span><span class="framework-meaning">Futures net negative. Favor shorts, tighten stops on longs.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">40–60 neutral</span><span class="framework-meaning">Mixed or weak signals. Wait for first-hour confirmation before sizing either direction.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--green)">61–69 bullish</span><span class="framework-meaning">Futures net positive. Favor longs, tighten stops on shorts.</span></div>
-      <div class="framework-row"><span class="framework-range" style="color:var(--green)">70–100 strong bull</span><span class="framework-meaning">Futures up + VIX down, one-sided. Consider adding risk, size up longs.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">0–15 strong bear</span><span class="framework-meaning">Futures sharply down + VIX up overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--red)">16–39 bearish</span><span class="framework-meaning">Futures net down overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--yellow)">40–60 neutral</span><span class="framework-meaning">No strong overnight move.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">61–69 bullish</span><span class="framework-meaning">Futures net up overnight.</span></div>
+      <div class="framework-row"><span class="framework-range" style="color:var(--green)">70–100 strong bull</span><span class="framework-meaning">Futures sharply up + VIX down overnight.</span></div>
       <div class="framework-arrow-note">
-        Built from a weighted average of ES/NQ/YM/RTY futures, VIX, DXY, WTI, MOO imbalance (if entered), and the buy/sell volume proxy (once available) — each contributes a -3..+3 signal scaled to its own extreme threshold, weighted by conviction (futures highest, breadth-type signals lower). 50 = neutral. Watch the direction of travel, not just the current bucket: a score climbing from 45→58 is a different signal than one sitting flat at 58.
-        <strong style="color:var(--text-primary)">Backtested against 2018-2026 (2,140 trading days, using each future's daily Open vs. prior Close as a proxy for a premarket snapshot - free intraday history only goes back ~30 days, so this can't replicate your exact 8pm SGT timing, but it's the closest available):</strong> correlation between this score and SPY's actual next-day gap is 0.555 - a genuinely strong number for a next-period equity signal. Hit rates outside the neutral zone run 78-96%. The old 85 "strong bull" threshold was recalibrated to 70 after backtesting showed 85 was set above the 99th percentile of 8.5 years of readings (only 13 of 2,140 days ever reached it) - 70 captures roughly the top 2.2% of readings, closer to symmetric with how often strong bear already fires. The weights themselves (why ES=F carries more weight than DXY, etc.) were tested against several alternative allocations including ones informed by each input's individual correlation with SPY's gap - every alternative performed worse than what's live now, so the weights were left unchanged rather than "improved" on paper.
-        The model is silent (neutral) on roughly 74% of days - that's expected, not a malfunction, since most sessions don't have a strong directional signal.
-        This is a same-session tactical read (minutes-to-hours), not the multi-week regime read in Part I above — the two can and often do disagree, and that's informative, not a bug.
+        <strong style="color:var(--text-primary)">What it is:</strong> a weighted average of the overnight % change in ES/NQ/YM/RTY futures, VIX (inverted), 10Y yield, dollar and crude, each measured against the prior 4pm ET close. Raw % changes are clamped to ±3 and mapped to 0–100 (50 = flat). Note: inputs are NOT individually scaled — VIX's % moves are several times larger than ES's, so VIX carries more influence than its weight suggests.
+        <strong style="color:var(--text-primary)">What the honest backtest says</strong> (rebuilt hour-by-hour exactly as it read at 8pm SGT, ~600 trading days — see the Edge Tracker below): it is a good <em>summary</em> of the overnight move, so it tells you whether today will probably close red or green. It is <em>not</em> a forecast: from 8pm SGT to the close it is right about half the time, because the move it reads has already happened. The older "0.555 correlation / 78–96% hit rate" figures compared the score with the gap it was partly built from and are withdrawn.
       </div>
     </div>
   </div>
@@ -507,7 +527,7 @@
        that needs paid NBBO quote data. Labeled clearly below so it's never mistaken for it. -->
   <div class="breadth-bar" id="breadthBar">
     <div class="breadth-title-row">
-      <span class="breadth-title">buy/sell volume proxy <span class="breadth-sub">(auto, 1-min bar direction — SPY/QQQ/DIA/IWM, first 4 trading hours)</span></span>
+      <span class="breadth-title">buy/sell volume proxy <span class="breadth-sub">(auto, 1-min bar direction — SPY/QQQ/DIA/IWM, first 4 trading hours — context only, not scored)</span></span>
       <span class="breadth-status" id="breadthStatus">loading...</span>
     </div>
     <div class="breadth-summary">
@@ -523,7 +543,35 @@
   </div>
 
 
-  <div class="section-heading"><h2>Reference Points</h2><span class="section-heading-sub">informational only — NAAIM, gold, and bitcoin below are context, not scored into Part I or Part II</span><div class="section-heading-line"></div></div>
+  <div class="edge-bar" id="edgeBar">
+    <div class="edge-title-row">
+      <span class="edge-title">Edge Tracker <span class="edge-sub">— does the 8pm SGT score predict anything? graded daily after the close</span></span>
+      <span class="edge-status" id="edgeStatus">loading...</span>
+    </div>
+    <div class="edge-verdict" id="edgeVerdict">--</div>
+    <div class="edge-table-wrap">
+      <table class="edge-table">
+        <thead><tr><th>question</th><th>bullish calls right</th><th>bearish calls right</th><th>coin-flip rate</th><th>verdict</th></tr></thead>
+        <tbody id="edgeTableBody"></tbody>
+      </table>
+    </div>
+    <div class="edge-cols">
+      <div>
+        <div class="edge-h">Live forward test <span class="muted" id="edgeFwdSince"></span></div>
+        <div class="edge-note" id="edgeForward">--</div>
+      </div>
+      <div>
+        <div class="edge-h">Last 10 sessions (8pm SGT score)</div>
+        <div class="edge-table-wrap" style="margin-bottom:0"><table class="edge-table" style="min-width:0">
+          <thead><tr><th>date</th><th>score</th><th>close vs prev</th><th>8pm→close</th></tr></thead>
+          <tbody id="edgeRecent"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="edge-note" style="margin-top:10px">How it's built: every day since May 2024 the score is rebuilt from hourly bars that had already closed by 8pm SGT, using the same formula and weights as above (TNX skipped before 8:20am ET; MOO and volume proxy not included). "Right" = SPY moved the way the call pointed. Coin-flip rate = how often SPY moved that way anyway on any day. A verdict of edge needs the 95% range to sit fully above the coin-flip rate.</div>
+  </div>
+
+  <div class="section-heading"><h2>Reference Points</h2><span class="section-heading-sub">informational only — gold and bitcoin below are context, not scored into Part I or Part II</span><div class="section-heading-line"></div></div>
   <!-- NAAIM SECTION START — see fetch-naaim.yml header for full removal instructions -->
   <div class="naaim-bar" id="naaimBar">
     <div class="naaim-title-row">
@@ -1023,26 +1071,109 @@ function updateBiasBar(bias) {
     fill.style.left = '50%'; fill.style.right = 'auto'; fill.className = 'bias-fill bull';
     if (bias.score >= 70) {
       badge.textContent = 'strong bull'; badge.className = 'bias-badge bias-badge-bull-strong';
-      actionEl.textContent = 'futures up + VIX down — consider adding risk, size up longs';
+      actionEl.textContent = edgeLine('bull', 'futures up + VIX down overnight');
     } else {
       badge.textContent = 'bullish'; badge.className = 'bias-badge bias-badge-bull';
-      actionEl.textContent = 'futures positive — favor longs, tighten stops on shorts';
+      actionEl.textContent = edgeLine('bull', 'futures up overnight');
     }
   } else if (bias.direction === 'bear') {
     fill.style.left = 'auto'; fill.style.right = '50%'; fill.className = 'bias-fill bear';
     if (bias.score <= 15) {
       badge.textContent = 'strong bear'; badge.className = 'bias-badge bias-badge-bear-strong';
-      actionEl.textContent = 'futures down + VIX up — reduce risk, raise cash, add hedges';
+      actionEl.textContent = edgeLine('bear', 'futures down + VIX up overnight');
     } else {
       badge.textContent = 'bearish'; badge.className = 'bias-badge bias-badge-bear';
-      actionEl.textContent = 'futures negative — favor shorts, tighten stops on longs';
+      actionEl.textContent = edgeLine('bear', 'futures down overnight');
     }
   } else {
     fill.style.width = '0%'; fill.className = 'bias-fill';
     badge.textContent = 'neutral'; badge.className = 'bias-badge bias-badge-neutral';
-    actionEl.textContent = 'mixed signals — wait for first hour confirmation before sizing';
+    actionEl.textContent = 'no strong overnight move — no directional read';
   }
   updateGlanceRow();
+}
+
+// =========================================================
+// EDGE TRACKER (v2) — reads v2's OWN data/edge_summary.json, written daily by
+// scripts/edge_tracker.py via edge-tracker.yml. Not from DATA_BASE (v1 has no such file).
+// =========================================================
+let EDGE = null;
+const pct = (x, d = 0) => (x === null || x === undefined) ? '--' : (100 * x).toFixed(d) + '%';
+
+function edgeLine(dir, lead) {
+  const st = EDGE && EDGE.backtest && EDGE.backtest.stats && EDGE.backtest.stats.sgt8pm;
+  if (!st) return lead + ' — see Edge Tracker below';
+  const rd = st.red_day[dir], sc = st.snap_close.signal_days;
+  const colour = dir === 'bull' ? 'green' : 'red';
+  return lead + ' — SPY closed ' + colour + ' on ' + pct(rd.hit) + ' of past days like this, but that move was mostly already priced in: from 8pm SGT to the close these calls were right ' + pct(sc.hit) + ' of the time';
+}
+
+function verdictFor(cell, base) {
+  if (!cell || !cell.n || cell.ci95[0] === null) return '<span class="edge-pill no">too few days</span>';
+  if (cell.ci95[0] > base) return '<span class="edge-pill yes">edge</span>';
+  if (cell.ci95[1] < base) return '<span class="edge-pill rev">opposite</span>';
+  return '<span class="edge-pill no">no edge</span>';
+}
+
+function edgeRowHTML(label, sub, r, alreadyPriced) {
+  const cell = (c) => c && c.n ? pct(c.hit) + ' <span class="muted">(' + c.n + ' days, 95%: ' + pct(c.ci95[0]) + '–' + pct(c.ci95[1]) + ')</span>' : '--';
+  let vb = verdictFor(r.bull, r.base_up), vr = verdictFor(r.bear, 1 - r.base_up);
+  if (alreadyPriced) { vb = vr = '<span class="edge-pill no">already priced</span>'; }
+  return '<tr><td>' + label + '<div class="muted">' + sub + '</div></td><td class="num">' + cell(r.bull) + '</td><td class="num">' + cell(r.bear) +
+    '</td><td class="num">' + pct(r.base_up) + ' up / ' + pct(1 - r.base_up) + ' down</td><td>bull ' + vb + '<br>bear ' + vr + '</td></tr>';
+}
+
+async function loadEdgeData() {
+  const statusEl = document.getElementById('edgeStatus');
+  try {
+    const res = await fetch('data/edge_summary.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('missing');
+    EDGE = await res.json();
+  } catch (e) {
+    EDGE = null;
+    statusEl.textContent = 'unavailable — run the "Edge Tracker" workflow in Actions';
+    return;
+  }
+  const bt = EDGE.backtest, st = bt.stats.sgt8pm;
+  const age = hoursAgo(EDGE._lastUpdated);
+  statusEl.textContent = bt.days + ' sessions (' + bt.from + ' → ' + bt.to + ') · graded ' + (age < 1 ? Math.round(age * 60) + 'm' : Math.round(age) + 'h') + ' ago';
+
+  const rd = st.red_day, sc = st.snap_close.signal_days;
+  document.getElementById('edgeVerdict').innerHTML =
+    '<strong>As a red/green-day label it works:</strong> bullish mornings closed green ' + pct(rd.bull.hit) + ' of the time and bearish mornings closed red ' + pct(rd.bear.hit) +
+    ', against ' + pct(rd.base_up) + ' / ' + pct(1 - rd.base_up) + ' on an average day. ' +
+    '<strong>As a prediction it does not:</strong> that edge is the overnight move already visible at 8pm SGT. Acting on it at 8pm SGT, the call was right ' + pct(sc.hit) +
+    ' of the time (95% range ' + pct(sc.ci95[0]) + '–' + pct(sc.ci95[1]) + ') — a coin flip. S&amp;P futures alone track the opening gap better than the full score (' +
+    st.gap.rho_es_only.toFixed(2) + ' vs ' + st.gap.rho_score.toFixed(2) + ' rank correlation).';
+
+  document.getElementById('edgeTableBody').innerHTML =
+    edgeRowHTML('Red or green close?', 'SPY close vs prior close — includes the overnight move', st.red_day) +
+    edgeRowHTML('Gap at the open', 'SPY open vs prior close — mostly visible at 8pm SGT already', st.gap, true) +
+    edgeRowHTML('<strong>8pm SGT → close</strong>', 'the tradeable part: what happens AFTER you read it', st.snap_close) +
+    edgeRowHTML('Open → close', 'the cash session after the gap', st.open_close);
+
+  const fwd = EDGE.forward;
+  document.getElementById('edgeFwdSince').textContent = '(method frozen ' + EDGE.forward_start + ')';
+  if (!fwd.stats) {
+    document.getElementById('edgeForward').innerHTML = fwd.days + ' session(s) graded so far. Results show from 3 sessions; treat anything under ~100 non-neutral days as noise.';
+  } else {
+    const f = fwd.stats.sgt8pm;
+    document.getElementById('edgeForward').innerHTML = fwd.days + ' sessions since the method was frozen (' + f.buckets.bull + ' bullish, ' + f.buckets.bear + ' bearish calls).<br>' +
+      'Red/green close right: ' + (f.red_day.signal_days ? pct(f.red_day.signal_days.hit) + ' of ' + f.red_day.signal_days.n : '--') + '<br>' +
+      '8pm SGT → close right: ' + (f.snap_close.signal_days ? pct(f.snap_close.signal_days.hit) + ' of ' + f.snap_close.signal_days.n + ' (95% ' + pct(f.snap_close.signal_days.ci95[0]) + '–' + pct(f.snap_close.signal_days.ci95[1]) + ')' : '--') +
+      '<br><span class="muted">Treat anything under ~100 non-neutral days as noise.</span>';
+  }
+
+  const sgn = (x, d = 2) => (x >= 0 ? '+' : '') + (100 * x).toFixed(d) + '%';
+  const col = (x) => 'color:' + (x > 0 ? '#15803d' : x < 0 ? '#b91c1c' : 'inherit');
+  document.getElementById('edgeRecent').innerHTML = EDGE.recent.slice(0, 10).map(r => {
+    const b = r.score > 60 ? 'bull' : r.score < 40 ? 'bear' : '';
+    const right = b ? ((b === 'bull') === (r.red_day > 0) ? ' ✓' : ' ✗') : '';
+    return '<tr><td>' + r.date.slice(5) + '</td><td class="num">' + r.score + (b ? ' <span class="muted">' + b + '</span>' : '') +
+      '</td><td class="num" style="' + col(r.red_day) + '">' + sgn(r.red_day) + right + '</td><td class="num" style="' + col(r.snap_close) + '">' + sgn(r.snap_close) + '</td></tr>';
+  }).join('');
+
+  recomputeAndRenderBias(); // refresh the bias text with the numbers
 }
 
 // =========================================================
@@ -1067,7 +1198,7 @@ function breadthIsTodaysSession(bd) {
 // This entire block is self-contained: flip NAAIM_ENABLED to false to disable
 // without deleting code, or delete this whole block (through NAAIM SECTION END)
 // to remove it completely. Nothing outside this block depends on it.
-const NAAIM_ENABLED = true;
+const NAAIM_ENABLED = false; // v2: public NAAIM data is delayed 3 months since 1 Aug 2026 - worse than nothing
 // Display scale for the zone bar (not NAAIM's theoretical -200..+200 range, which
 // would compress all real-world readings into a sliver — this covers the actual
 // observed historical range with room either side). Zones are contrarian: high
@@ -1221,7 +1352,7 @@ async function loadBreadthData() {
   const ratio = breadthData.upDownRatio;
   const ratioEl = document.getElementById('breadthRatio');
   ratioEl.textContent = ratio !== null ? ratio.toFixed(2) : '--';
-  ratioEl.style.color = ratio > 1.1 ? 'var(--green)' : ratio < 0.9 ? 'var(--red)' : 'var(--text-primary)';
+  ratioEl.style.color = ratio > 1.5 ? 'var(--green)' : ratio < 0.667 ? 'var(--red)' : 'var(--text-primary)'; // 60/40 split; inside that is noise
 
   Object.entries(breadthData.symbols).forEach(([ticker, d]) => {
     const el = document.getElementById('breadth-' + ticker);
@@ -1233,7 +1364,7 @@ async function loadBreadthData() {
       '<div class="breadth-item-up" style="width:' + upPct.toFixed(1) + '%"></div>';
     const pctEl = el.querySelector('.breadth-item-pct');
     pctEl.textContent = upPct.toFixed(0) + '% up-volume';
-    pctEl.style.color = upPct > 55 ? 'var(--green)' : upPct < 45 ? 'var(--red)' : 'var(--text-secondary)';
+    pctEl.style.color = upPct > 60 ? 'var(--green)' : upPct < 40 ? 'var(--red)' : 'var(--text-secondary)'; // 40-60% = noise
   });
 
   recomputeAndRenderBias();
@@ -1324,7 +1455,7 @@ function updateMOOImbalance() {
     else breadthNote = ' — mixed (' + agree + '/' + others.length + ' segments agree)';
   }
 
-  statusEl.textContent = 'entered ' + timeStr + ' — S&P ' + sp500Dir + sp500 + 'mln driving bias' + breadthNote;
+  statusEl.textContent = 'entered ' + timeStr + ' — S&P ' + sp500Dir + sp500 + 'mln (context only, not scored)' + breadthNote;
   statusEl.className = 'moo-status set';
 
   recomputeAndRenderBias();
@@ -1338,28 +1469,10 @@ let lastPulseResults = [];
 function recomputeAndRenderBias() {
   const combined = lastPulseResults.slice();
 
-  if (manualMOOEntry) {
-    const clamped = Math.max(-1, Math.min(1, manualMOOEntry.sp500 / MOO_SP500_EXTREME_MLN));
-    const pseudoChangePct = clamped * 3; // maps onto the same -3..+3 raw scale as futures %
-    combined.push({
-      name: 'MOO Imbalance (S&P 500)', ticker: 'MOO-SPX', current: manualMOOEntry.sp500, previous: 0,
-      change: pseudoChangePct, weight: MOO_WEIGHT, invert: false, decimals: 1, id: 'moo-composite'
-    });
-  }
-
-  if (breadthData && breadthData.upDownRatio !== null && breadthData.upDownRatio !== undefined && breadthIsTodaysSession(breadthData)) {
-    const ratio = breadthData.upDownRatio;
-    // log-scaled so it's symmetric: a 2x up/down ratio and a 0.5x ratio are equally extreme.
-    // 2x treated as the "maxed out" reference point - a judgment call, not backtested,
-    // same caveat as the other manual-threshold constants in this file.
-    const clamped = Math.max(-1, Math.min(1, Math.log(ratio) / Math.log(2)));
-    const pseudoChangePct = clamped * 3;
-    combined.push({
-      name: 'Buy/Sell Volume Proxy', ticker: 'BREADTH', current: ratio, previous: 1,
-      change: pseudoChangePct, weight: BREADTH_WEIGHT, invert: false, decimals: 2, id: 'breadth-composite'
-    });
-  }
-
+  // v2: MOO imbalance and the buy/sell volume proxy are shown as context only.
+  // Neither exists at the 8pm SGT read, neither has been tested, and mixing them in
+  // made the score mean different things at different times of day. The score is now
+  // exactly what the Edge Tracker grades.
   if (combined.length > 0) {
     const bias = computeBiasScore(combined);
     updateBiasBar(bias);
@@ -1368,10 +1481,16 @@ function recomputeAndRenderBias() {
 
 async function fetchRealtime() {
   const pulseData = await loadPulseData();
+  const nyNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const tnxNotYet = (nyNow.getHours() * 60 + nyNow.getMinutes()) < (8 * 60 + 20);
   const results = [];
 
   if (pulseData) {
+    // v2: ^TNX has no data before 08:20 ET. Before then Yahoo's "current" is yesterday's
+    // close and "previous" the day before, so v1 scored YESTERDAY's yield move as if it
+    // were overnight news. Skip it until it actually trades.
     PREMARKET_SYMBOLS.forEach(s => {
+      if (s.ticker === '^TNX' && tnxNotYet) return;
       const key = YAHOO_KEY_MAP[s.ticker];
       const d = pulseData[key];
       if (!d || d.current == null || d.previous == null) return;
@@ -1386,6 +1505,10 @@ async function fetchRealtime() {
 
   lastPulseResults = results;
   updatePulseUI(results, results.length < PREMARKET_SYMBOLS.length, yahooLastUpdated);
+  if (pulseData && tnxNotYet) {
+    const el = document.getElementById('pulse-tnx');
+    if (el) { el.querySelector('.pulse-change').textContent = 'not scored before 8:20am ET'; }
+  }
 
   if (results.length > 0 || manualMOOEntry || (breadthData && breadthData.upDownRatio !== null)) {
     recomputeAndRenderBias();
@@ -2070,6 +2193,7 @@ async function manualRefresh() {
     await Promise.all([
       loadFREDData(),
       loadBreadthData(),
+      loadEdgeData(),
       loadNAAIMData(),
       loadGoldData(),
       loadBTCData(),
@@ -2125,6 +2249,7 @@ function renderPageLoadedTimestamp() {
   setPageLoadedTimestamp();
   await loadFREDData();
   await loadBreadthData();
+  await loadEdgeData();
   await loadNAAIMData();
   await loadGoldData();
   await loadBTCData();

@@ -1,0 +1,31 @@
+name: Edge Tracker (grade the pre-market bias score)
+
+on:
+  schedule:
+    # 22:10 UTC Mon-Fri = after the US close in both EDT and EST.
+    # Timing is not critical: the script rebuilds each morning's score from hourly
+    # history and back-fills any missed days, so a late or skipped run self-heals.
+    - cron: '10 22 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild scores and grade against SPY
+        run: python3 scripts/edge_tracker.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/edge_rows.json data/edge_summary.json
+          git diff --cached --quiet || git commit -m "Edge tracker update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main
+          done
