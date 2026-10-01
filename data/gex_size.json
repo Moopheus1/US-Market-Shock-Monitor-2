@@ -1,19 +1,19 @@
 {
- "_lastUpdated": "2026-09-30T13:47:49Z",
+ "_lastUpdated": "2026-10-01T01:19:18Z",
  "_source": "SqueezeMetrics DIX.csv (free, daily)",
  "latest": {
-  "gex_date": "2026-09-29",
-  "gex": 4984119946.790004,
-  "pct_vs_past_year": 0.32936507936507936,
-  "band": 1,
-  "band_name": "20-40%",
-  "label": "Somewhat bigger than normal",
-  "normal_move_pct": 0.5762211334211542,
-  "sp500_close": 7670.84,
-  "expected_size": 1.220464780645517,
-  "expected_move_pct": 0.7032575992041601,
-  "expected_move_points": 53.945765222792396,
-  "p_bigger_than_normal": 0.474025974025974
+  "gex_date": "2026-09-30",
+  "gex": 5670345921.380004,
+  "pct_vs_past_year": 0.4603174603174603,
+  "band": 2,
+  "band_name": "middle",
+  "label": "Normal-sized day",
+  "normal_move_pct": 0.5532372267607338,
+  "sp500_close": 7651.54,
+  "expected_size": 1.024647834600739,
+  "expected_move_pct": 0.5668733264209039,
+  "expected_move_points": 43.37453932042603,
+  "p_bigger_than_normal": 0.39520958083832336
  },
  "bands": [
   {
@@ -27,10 +27,10 @@
   {
    "name": "20-40%",
    "label": "Somewhat bigger than normal",
-   "n": 616,
-   "avg_size": 1.220464780645517,
-   "p_bigger": 0.474025974025974,
-   "p_double": 0.19318181818181818
+   "n": 617,
+   "avg_size": 1.2191944028700366,
+   "p_bigger": 0.473257698541329,
+   "p_double": 0.19286871961102106
   },
   {
    "name": "middle",
@@ -130,10 +130,10 @@
     "p_double": 0.25
    },
    {
-    "n": 82,
-    "avg_size": 1.1510055143676636,
-    "p_bigger": 0.47560975609756095,
-    "p_double": 0.15853658536585366
+    "n": 83,
+    "avg_size": 1.1423987213412365,
+    "p_bigger": 0.46987951807228917,
+    "p_double": 0.1566265060240964
    },
    {
     "n": 78,
@@ -155,15 +155,22 @@
    }
   ]
  },
- "test_days": 3622,
+ "test_days": 3623,
  "test_from": "2012-05-02",
- "test_to": "2026-09-29",
+ "test_to": "2026-09-30",
  "recent": [
+  {
+   "session": "2026-09-30",
+   "band": 1,
+   "label": "Somewhat bigger than normal",
+   "expected": 1.2191944028700366,
+   "actual": 0.43664169317422197
+  },
   {
    "session": "2026-09-29",
    "band": 1,
    "label": "Somewhat bigger than normal",
-   "expected": 1.220464780645517,
+   "expected": 1.2191944028700366,
    "actual": 0.28613492854998035
   },
   {
@@ -219,7 +226,7 @@
    "session": "2026-09-17",
    "band": 1,
    "label": "Somewhat bigger than normal",
-   "expected": 1.220464780645517,
+   "expected": 1.2191944028700366,
    "actual": 2.2919037084079714
   },
   {
@@ -233,7 +240,7 @@
    "session": "2026-09-15",
    "band": 1,
    "label": "Somewhat bigger than normal",
-   "expected": 1.220464780645517,
+   "expected": 1.2191944028700366,
    "actual": 0.8773598422006477
   },
   {
@@ -254,15 +261,8 @@
    "session": "2026-09-10",
    "band": 1,
    "label": "Somewhat bigger than normal",
-   "expected": 1.220464780645517,
+   "expected": 1.2191944028700366,
    "actual": 1.244049995578728
-  },
-  {
-   "session": "2026-09-09",
-   "band": 2,
-   "label": "Normal-sized day",
-   "expected": 1.024647834600739,
-   "actual": 1.0482876999587352
   }
  ]
 }
