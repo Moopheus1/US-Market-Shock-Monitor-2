@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-10-01T01:16:27Z",
+ "_lastUpdated": "2026-10-02T01:39:34Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -279,76 +279,108 @@
   }
  },
  "forward": {
-  "days": 0,
+  "days": 2,
   "stats": null
  },
  "flow": {
   "first_logged": "2026-09-30T12:41:20Z",
-  "rows_logged": 4,
+  "rows_logged": 8,
   "preopen": {
    "colour": {
-    "n": 0,
-    "hit": null,
+    "n": 2,
+    "hit": 1.0,
     "ci95": [
-     null,
-     null
+     0.34237195288961925,
+     1.0
     ]
    },
    "after": {
-    "n": 0,
-    "hit": null,
+    "n": 2,
+    "hit": 0.5,
     "ci95": [
-     null,
-     null
+     0.09452865480086614,
+     0.9054713451991339
     ]
    },
    "colour_all": {
-    "n": 0,
-    "hit": null,
+    "n": 2,
+    "hit": 1.0,
     "ci95": [
-     null,
-     null
+     0.34237195288961925,
+     1.0
     ]
    }
   },
   "firsthour": {
    "rest": {
-    "n": 0,
-    "hit": null,
+    "n": 2,
+    "hit": 0.5,
     "ci95": [
-     null,
-     null
+     0.09452865480086614,
+     0.9054713451991339
     ]
    },
    "rest_all": {
-    "n": 0,
-    "hit": null,
+    "n": 2,
+    "hit": 0.5,
     "ci95": [
-     null,
-     null
+     0.09452865480086614,
+     0.9054713451991339
     ]
    }
   },
   "recent": [
    {
+    "session": "2026-10-01",
+    "run": "firsthour",
+    "net_ex0dte": -18380064,
+    "truncated": false,
+    "outcome": 0.004589073286489054,
+    "right": false
+   },
+   {
+    "session": "2026-10-01",
+    "run": "preopen",
+    "net_ex0dte": 2431759,
+    "truncated": false,
+    "outcome": 0.0017832832997064507,
+    "right": true
+   },
+   {
     "session": "2026-09-30",
     "run": "firsthour",
     "net_ex0dte": -8126790,
     "truncated": false,
-    "outcome": null,
-    "right": null
+    "outcome": -0.006824059108567315,
+    "right": true
    },
    {
     "session": "2026-09-30",
     "run": "preopen",
     "net_ex0dte": -30385179,
     "truncated": false,
-    "outcome": null,
-    "right": null
+    "outcome": -0.002054445562863161,
+    "right": true
    }
   ]
  },
  "recent": [
+  {
+   "date": "2026-10-01",
+   "score": 59,
+   "score_9am": 55,
+   "red_day": 0.0017832832997064507,
+   "open_close": -0.0004840587213854608,
+   "snap_close": -0.0022276748240459554
+  },
+  {
+   "date": "2026-09-30",
+   "score": 51,
+   "score_9am": 58,
+   "red_day": -0.002054445562863161,
+   "open_close": -0.004984026698908739,
+   "snap_close": -0.002973112719751758
+  },
   {
    "date": "2026-09-29",
    "score": 57,
@@ -452,22 +484,6 @@
    "red_day": 0.008524287494320992,
    "open_close": -0.0005622877553280725,
    "snap_close": 0.0023885089814481564
-  },
-  {
-   "date": "2026-09-10",
-   "score": 40,
-   "score_9am": 21,
-   "red_day": -0.005994238166152965,
-   "open_close": -0.00026385789388416736,
-   "snap_close": -0.004389412997903519
-  },
-  {
-   "date": "2026-09-09",
-   "score": 32,
-   "score_9am": 35,
-   "red_day": -0.004647758964528403,
-   "open_close": -0.00219871301199559,
-   "snap_close": -0.0010780438404495163
   }
  ]
 }
