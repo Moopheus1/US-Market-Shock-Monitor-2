@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-10-02T01:39:34Z",
+ "_lastUpdated": "2026-10-03T01:10:03Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -284,7 +284,7 @@
  },
  "flow": {
   "first_logged": "2026-09-30T12:41:20Z",
-  "rows_logged": 8,
+  "rows_logged": 12,
   "preopen": {
    "colour": {
     "n": 2,
@@ -330,6 +330,22 @@
    }
   },
   "recent": [
+   {
+    "session": "2026-10-02",
+    "run": "firsthour",
+    "net_ex0dte": -3557294,
+    "truncated": false,
+    "outcome": null,
+    "right": null
+   },
+   {
+    "session": "2026-10-02",
+    "run": "preopen",
+    "net_ex0dte": -16998100,
+    "truncated": false,
+    "outcome": null,
+    "right": null
+   },
    {
     "session": "2026-10-01",
     "run": "firsthour",
