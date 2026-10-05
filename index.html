@@ -120,6 +120,19 @@
   .sc-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
   .edge-rule.size { border-left: 4px solid #8b5cf6; }
   .edge-rule.flow { border-left: 4px solid #0ea5e9; }
+  .edge-rule.risk { border-left: 4px solid var(--border); margin-bottom: 14px; }
+  .edge-rule.risk.l0 { border-left-color: var(--green); }
+  .edge-rule.risk.l1 { border-left-color: #f59e0b; }
+  .edge-rule.risk.l2 { border-left-color: var(--red); background: var(--red-dim); }
+  .risk-call { font-size: 18px; font-weight: 800; }
+  .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+  @media (max-width: 700px) { .risk-grid { grid-template-columns: 1fr; } }
+  .risk-cell { border: 1px solid transparent; border-radius: 8px; padding: 8px 10px; background: var(--bg); font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+  .risk-cell b { display: block; font-size: 13px; color: var(--text-secondary); }
+  .risk-cell.on { background: var(--card-bg); color: var(--text-primary); }
+  .risk-cell.on.l0 { border-color: var(--green); } .risk-cell.on.l1 { border-color: #f59e0b; } .risk-cell.on.l2 { border-color: var(--red); }
+  .risk-cell.on b { color: var(--text-primary); }
+  .risk-alarm { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.45); font-size: 13px; line-height: 1.5; color: var(--text-primary); }
   .size-bands { display: flex; gap: 4px; margin-top: 10px; }
   .size-band { flex: 1; text-align: center; font-size: 11px; line-height: 1.3; padding: 6px 2px; border-radius: 6px; background: var(--bg); color: var(--text-muted); border: 1px solid transparent; }
   .size-band b { display: block; font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -394,6 +407,14 @@
     </div>
 
     <div class="edge-today" id="edgeToday">--</div>
+
+    <div class="edge-rule risk" id="riskCard">
+      <div class="edge-rule-head">🚦 Risk light — normal size, cut size, or stay out? <span class="muted" id="riskAsOf"></span></div>
+      <div class="edge-rule-body" id="riskBody">loading...</div>
+      <div id="riskAlarm"></div>
+      <div class="risk-grid" id="riskGrid"></div>
+      <div class="edge-note" id="riskNote" style="margin-top:8px"></div>
+    </div>
 
     <div class="edge-rules">
       <div class="edge-rule good">
@@ -1189,6 +1210,73 @@ async function loadSizeData() {
     (hits.length ? 'Last 10 sessions: ' + right + ' of ' + hits.length + ' big/quiet calls matched.' : '');
 }
 
+// RISK LIGHT (v2) - reads data/risk_light.json, written hourly by scripts/risk_light.py.
+// The level comes from last night's closes (VIX, VIX3M, GEX) and is what the 14-year test
+// graded. The overnight alarm is a separate live overlay from S&P futures: it can lift
+// GREEN to AMBER, never lower a level.
+let RISK = null, RISK_ES_CHANGE = null;
+function renderRisk() {
+  const body = document.getElementById('riskBody');
+  if (!body) return;
+  if (!RISK) { body.textContent = 'unavailable — run the "GEX size of today" workflow in Actions'; return; }
+  const R = RISK, L = R.latest, LV = R.levels, A = R.overnight_alarm;
+  const nextDay = new Date(L.as_of + 'T12:00:00Z'); nextDay.setUTCDate(nextDay.getUTCDate() + (nextDay.getUTCDay() === 5 ? 3 : 1));
+  document.getElementById('riskAsOf').textContent = '(for the ' + nextDay.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' US session)';
+  const alarmOn = !!(A && A.moved && A.moved.n && RISK_ES_CHANGE !== null && Math.abs(RISK_ES_CHANGE) >= A.threshold * 100);
+  const lvl = Math.max(L.level, alarmOn ? 1 : 0);
+  const colours = ['#15803d', '#b45309', '#b91c1c'];
+  const calls = ['GREEN — normal size', 'AMBER — cut size', 'RED — stay out'];
+  const n10 = (x) => { const v = Math.round(x * 10); return v < 1 ? 'fewer than 1' : String(v); };
+  const sizeTxt = (v) => v.size_for_equal_risk >= 0.95 ? 'full size' : 'about ' + (v.size_for_equal_risk >= 0.45 ? 'half' : 'a quarter to a third') + ' of your usual size';
+  const F = L.flags, why = [];
+  why.push('VIX closed at <strong>' + L.vix.toFixed(1) + '</strong> (' + (F.vix_25 ? 'stress: 25 or more' : L.vix >= R.rule.vix_watch ? 'elevated: 20 or more' : 'calm: under 20') + ')');
+  why.push(L.vix3m == null ? '3-month VIX not available' : 'near-term fear is <strong>' + (F.vix_above_3m ? 'above' : 'below') + '</strong> 3-month fear (' + L.vix.toFixed(1) + ' vs ' + L.vix3m.toFixed(1) + ')' + (F.vix_above_3m ? ' — stress' : ''));
+  why.push('dealer gamma is <strong>' + (F.gex_negative ? 'negative' : 'positive') + '</strong>' + (F.gex_negative ? ' — stress, dealers amplify moves' : L.gex_pct_vs_past_year < R.rule.gex_low_pct ? ' but in the lowest 20% of its past year' : ''));
+  const v = LV[lvl];
+  const lead = ['Nothing is flashing. On past days like this a swing of 2% or more was rare: <strong>' + pct(v.p2, 1) + '</strong> of days.',
+    'Conditions are jumpy. On past days like this the market moved 1% or more on <strong>' + n10(v.p1) + ' days in 10</strong> and 2% or more on <strong>' + pct(v.p2) + '</strong>. Trade ' + sizeTxt(v) + ' so a normal-looking loss stays normal.',
+    'The market is in a stressed state. On past days like this it moved 2% or more on <strong>' + n10(v.p2) + ' days in 10</strong> and 3% or more on <strong>' + pct(v.p3) + '</strong>. Stay out of new trades, or keep to ' + sizeTxt(v) + '.'][lvl];
+  body.innerHTML = '<span class="risk-call" style="color:' + colours[lvl] + '">' + calls[lvl] + '</span><br>' + lead +
+    '<br><span class="muted">Why: ' + why.join('; ') + '. ' + L.stress_flags + ' of 3 stress flags on.</span>';
+  document.getElementById('riskCard').className = 'edge-rule risk l' + lvl;
+
+  const al = document.getElementById('riskAlarm');
+  if (alarmOn) {
+    const m = RISK_ES_CHANGE < 0 ? A.down : A.up, dirTxt = RISK_ES_CHANGE < 0 ? 'down' : 'up';
+    al.innerHTML = '<div class="risk-alarm">⚠️ <strong>Shock in progress:</strong> S&amp;P futures are already ' + dirTxt + ' <strong>' + Math.abs(RISK_ES_CHANGE).toFixed(2) + '%</strong> since the last close' +
+      (L.level === 0 ? ', so the light is lifted from green to amber' : '') + '. On the ' + A.moved.n + ' days since ' + A.from.slice(0, 4) + ' when futures had moved 1% or more by 8pm SGT, the rest of the day moved another 1% or more on ' + pct(A.moved.p1_rest) +
+      ' of them (any day: ' + pct(A.all.p1_rest) + ')' + (m && m.n ? '; after a ' + dirTxt + ' move like this, ' + pct(m.p1_rest) + ' (' + m.n + ' days)' : '') +
+      '. Which way it went from there was a coin toss (' + pct(A.moved.up_rest) + ' up). <span class="muted">Small sample — treat as a caution flag, not a statistic.</span></div>';
+  } else if (A && A.moved && RISK_ES_CHANGE !== null) {
+    al.innerHTML = '<div class="edge-note" style="margin-top:6px">Overnight alarm: off — S&amp;P futures ' + (RISK_ES_CHANGE >= 0 ? '+' : '') + RISK_ES_CHANGE.toFixed(2) + '% since the last close (trips at ±' + (A.threshold * 100).toFixed(0) + '%).</div>';
+  } else { al.innerHTML = ''; }
+
+  document.getElementById('riskGrid').innerHTML = LV.map((x, k) =>
+    '<div class="risk-cell l' + k + (k === lvl ? ' on' : '') + '"><b>' + ['🟢 Green', '🟠 Amber', '🔴 Red'][k] + ' — ' + x.action.toLowerCase() + '</b>' +
+    pct(x.share) + ' of all days · typical move ±' + (100 * x.avg_abs).toFixed(2) + '%<br>' +
+    '1%+ move: ' + pct(x.p1) + ' · 2%+: ' + pct(x.p2, 1) + ' · 3%+: ' + pct(x.p3, 1) + '<br>' +
+    'closed green ' + pct(x.green) + ' · worst day ' + (100 * x.worst).toFixed(1) + '%</div>').join('');
+
+  const P = R.by_period, C = R.coverage, W = R.what_if, RR = R.red_runs, fw = R.forward;
+  const per = ['2012-2019', '2020-2024', '2025-now'].map(k => pct(P[k][2].p2)).join(', ');
+  document.getElementById('riskNote').innerHTML =
+    'Tested on ' + R.test_days.toLocaleString() + ' sessions since ' + R.test_from.slice(0, 4) + ', using only what was known the evening before. Red days had a 2%+ move ' + per + ' of the time in 2012–19, 2020–24 and 2025–now, so the pattern is not one lucky period. ' +
+    '<strong>What it is not:</strong> (1) it does not say which way — red days still closed green ' + pct(LV[2].green) + ' of the time, and some of the biggest up-days are red days; ' +
+    '(2) it does not see the first hit coming — of the ' + C.down3.n + ' days the S&amp;P fell 3% or more, ' + C.down3.red + ' were red the evening before, ' + C.down3.amber + ' amber and ' + C.down3.green + ' green. It tells you a storm is already here, not that one is on the way. ' +
+    'Red arrived from amber ' + RR.entered_from_amber + ' times and straight from green ' + RR.entered_from_green + ' times; a red spell typically lasted ' + RR.median_days + ' days (longest ' + RR.longest_days + '). ' +
+    '<strong>Cost of staying out:</strong> holding the S&amp;P every day made ' + pct(W.always_in.cagr, 1) + ' a year with a worst fall of ' + pct(-W.always_in.max_dd) + '; sitting out red days made ' + pct(W.out_on_red.cagr, 1) + ' with a worst fall of ' + pct(-W.out_on_red.max_dd) +
+    '. Staying out buys a smoother ride, not more profit (index only, no costs). ' +
+    (fw.days ? 'Live test since ' + R.forward_start + ': ' + fw.days + ' sessions graded.' : 'Live test starts ' + R.forward_start + ' — the rule was fixed before then.');
+}
+
+async function loadRiskData() {
+  try {
+    const res = await fetch('data/risk_light.json', { cache: 'no-store' });
+    if (res.ok) RISK = await res.json();
+  } catch (e) {}
+  renderRisk();
+}
+
 function renderFlow() {
   const body = document.getElementById('flowBody');
   const F = EDGE && EDGE.flow;
@@ -1516,6 +1604,9 @@ async function fetchRealtime() {
   }
 
   lastPulseResults = results;
+  const esLive = results.find(r => r.ticker === 'ES=F');
+  RISK_ES_CHANGE = esLive ? esLive.change : null;
+  renderRisk();
   updatePulseUI(results, results.length < PREMARKET_SYMBOLS.length, yahooLastUpdated);
   if (pulseData && tnxNotYet) {
     const el = document.getElementById('pulse-tnx');
@@ -2207,6 +2298,7 @@ async function manualRefresh() {
       loadBreadthData(),
       loadEdgeData(),
       loadSizeData(),
+      loadRiskData(),
       loadNAAIMData(),
       loadGoldData(),
       loadBTCData(),
@@ -2264,6 +2356,7 @@ function renderPageLoadedTimestamp() {
   await loadBreadthData();
   await loadEdgeData();
   await loadSizeData();
+  await loadRiskData();
   await loadNAAIMData();
   await loadGoldData();
   await loadBTCData();

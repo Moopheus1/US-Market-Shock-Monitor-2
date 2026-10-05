@@ -26,6 +26,28 @@ The older v1 claim (0.555 correlation, 78–96% hit rates) compared the score wi
 ## Size of today (GEX)
 `scripts/gex_size.py` (hourly via `fetch-gex.yml`) ranks the latest free SqueezeMetrics GEX against its past year and turns it into an expected move size for the next session. 15-year test, no look-ahead: lowest-GEX band averaged 1.35× a normal day, highest 0.84×, and the pattern held in 2012–19, 2020–24 and 2025–now. It predicts **size, not direction** (next-day green rate is ~54% in every band).
 
+## Risk light (normal size / cut size / stay out)
+`scripts/risk_light.py` (hourly, same job as the GEX size) answers one question for the next session: is a 2%+ swing likely? Three stress flags, all known the evening before: VIX closed at 25+, VIX closed above 3-month VIX, GEX negative. **Red** = two or three flags. **Amber** = one flag, or VIX 20+, or GEX in the lowest 20% of its past year. **Green** = none.
+
+Test: 3,625 sessions, May 2012 → Oct 2026, no look-ahead. Thresholds are round numbers picked before testing, not tuned.
+
+| Light | Share of days | Typical move | 1%+ move | 2%+ move | 3%+ move | Closed green |
+|---|---|---|---|---|---|---|
+| Green | 67% | ±0.50% | 13% | 1.2% | 0.1% | 53% |
+| Amber | 25% | ±0.89% | 37% | 7.5% | 1.5% | 57% |
+| Red | 8% | ±1.73% | 62% | 31% | 14% | 53% |
+
+Red days had a 2%+ move 23% / 36% / 32% of the time in 2012–19 / 2020–24 / 2025–now.
+
+What it does not do:
+- **No direction.** Red days closed green 53% of the time and averaged a small gain. It measures size only.
+- **No early warning.** Of the 35 days the S&P fell 3%+, 22 were red the evening before, 10 amber, 3 green. The first hit of a shock (24 Feb 2020, 3 Apr 2025, Brexit) is usually not red. It says a storm is here, not that one is coming.
+- **No extra profit.** S&P held every day: 12.6% a year, worst fall 34%. Sitting out red days: 10.2% a year, worst fall 24%. Staying out buys a smoother ride at the cost of return (index only, no costs).
+
+The **overnight alarm** is a live overlay: if S&P futures are already ±1% from the last close, green is lifted to amber. On the 40 such days since May 2024 the rest of the day moved another 1%+ on 38% of them (any day: 14%). Small sample; a caution flag only.
+
+Sessions from **2026-10-06** onward are the live out-of-sample test.
+
 ## Options-flow forward test
 A scheduled task logs big ($100k+) SPY/QQQ options flow from the Rallies connector into `data/flow_log.json` twice each weekday (8:40am ET pre-open, 10:35am ET after the first hour). `edge_tracker.py` grades it after the close. No flow history is available for free, so this can only be tested going forward; treat results as noise until ~50 graded days.
 

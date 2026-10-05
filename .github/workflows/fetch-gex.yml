@@ -19,11 +19,17 @@ jobs:
       - name: Rank latest GEX and write expected move size
         run: python3 scripts/gex_size.py
 
+      # Separate step, allowed to fail: if Yahoo's VIX feed is down the GEX file still
+      # commits and the page keeps the last good risk light.
+      - name: Risk light (normal size / cut size / stay out)
+        continue-on-error: true
+        run: python3 scripts/risk_light.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/gex_size.json
+          git add data/gex_size.json data/risk_light.json
           git diff --cached --quiet || git commit -m "GEX size update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
           for i in 1 2 3; do
             git push && break
