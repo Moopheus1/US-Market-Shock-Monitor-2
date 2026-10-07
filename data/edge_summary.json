@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-10-06T02:16:18Z",
+ "_lastUpdated": "2026-10-07T01:30:33Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -279,19 +279,19 @@
   }
  },
  "forward": {
-  "days": 4,
+  "days": 5,
   "stats": {
    "sgt8pm": {
     "buckets": {
      "bull": 0,
-     "neutral": 3,
+     "neutral": 4,
      "bear": 1
     },
     "red_day": {
-     "n": 4,
-     "base_up": 0.75,
+     "n": 5,
+     "base_up": 0.8,
      "rho_score": 0.4,
-     "rho_es_only": 0.4,
+     "rho_es_only": 0.2,
      "bull": {
       "n": 0,
       "hit": null,
@@ -320,9 +320,9 @@
      }
     },
     "gap": {
-     "n": 4,
+     "n": 5,
      "base_up": 1.0,
-     "rho_score": 0.8,
+     "rho_score": 0.9,
      "rho_es_only": 0.8,
      "bull": {
       "n": 0,
@@ -352,10 +352,10 @@
      }
     },
     "open_close": {
-     "n": 4,
-     "base_up": 0.25,
-     "rho_score": -0.4,
-     "rho_es_only": -0.4,
+     "n": 5,
+     "base_up": 0.4,
+     "rho_score": -0.3,
+     "rho_es_only": -0.1,
      "bull": {
       "n": 0,
       "hit": null,
@@ -384,10 +384,10 @@
      }
     },
     "snap_close": {
-     "n": 4,
-     "base_up": 0.5,
-     "rho_score": -0.2,
-     "rho_es_only": -0.2,
+     "n": 5,
+     "base_up": 0.6,
+     "rho_score": 0.0,
+     "rho_es_only": -0.1,
      "bull": {
       "n": 0,
       "hit": null,
@@ -419,14 +419,14 @@
    "et9am": {
     "buckets": {
      "bull": 1,
-     "neutral": 2,
+     "neutral": 3,
      "bear": 1
     },
     "red_day": {
-     "n": 4,
-     "base_up": 0.75,
-     "rho_score": 0.2,
-     "rho_es_only": 0.2,
+     "n": 5,
+     "base_up": 0.8,
+     "rho_score": 0.1,
+     "rho_es_only": 0.3,
      "bull": {
       "n": 1,
       "hit": 1.0,
@@ -455,9 +455,9 @@
      }
     },
     "gap": {
-     "n": 4,
+     "n": 5,
      "base_up": 1.0,
-     "rho_score": 1.0,
+     "rho_score": 0.9,
      "rho_es_only": 1.0,
      "bull": {
       "n": 1,
@@ -487,10 +487,10 @@
      }
     },
     "open_close": {
-     "n": 4,
-     "base_up": 0.25,
+     "n": 5,
+     "base_up": 0.4,
      "rho_score": -0.8,
-     "rho_es_only": -0.8,
+     "rho_es_only": -0.5,
      "bull": {
       "n": 1,
       "hit": 0.0,
@@ -519,10 +519,10 @@
      }
     },
     "snap_close": {
-     "n": 4,
-     "base_up": 0.25,
+     "n": 5,
+     "base_up": 0.4,
      "rho_score": -0.8,
-     "rho_es_only": -0.8,
+     "rho_es_only": -0.5,
      "bull": {
       "n": 1,
       "hit": 0.0,
@@ -555,52 +555,68 @@
  },
  "flow": {
   "first_logged": "2026-09-30T12:41:20Z",
-  "rows_logged": 14,
+  "rows_logged": 18,
   "preopen": {
    "colour": {
-    "n": 4,
-    "hit": 0.5,
+    "n": 5,
+    "hit": 0.6,
     "ci95": [
-     0.15003570882017148,
-     0.8499642911798285
+     0.23071993220883708,
+     0.8823817688407467
     ]
    },
    "after": {
-    "n": 4,
-    "hit": 0.5,
+    "n": 5,
+    "hit": 0.6,
     "ci95": [
-     0.15003570882017148,
-     0.8499642911798285
+     0.23071993220883708,
+     0.8823817688407467
     ]
    },
    "colour_all": {
-    "n": 4,
-    "hit": 0.5,
+    "n": 5,
+    "hit": 0.6,
     "ci95": [
-     0.15003570882017148,
-     0.8499642911798285
+     0.23071993220883708,
+     0.8823817688407467
     ]
    }
   },
   "firsthour": {
    "rest": {
-    "n": 3,
-    "hit": 0.6666666666666666,
+    "n": 4,
+    "hit": 0.5,
     "ci95": [
-     0.2076549551264879,
-     0.9385096847238394
+     0.15003570882017148,
+     0.8499642911798285
     ]
    },
    "rest_all": {
-    "n": 3,
-    "hit": 0.6666666666666666,
+    "n": 4,
+    "hit": 0.5,
     "ci95": [
-     0.2076549551264879,
-     0.9385096847238394
+     0.15003570882017148,
+     0.8499642911798285
     ]
    }
   },
   "recent": [
+   {
+    "session": "2026-10-06",
+    "run": "firsthour",
+    "net_ex0dte": -1912116,
+    "truncated": false,
+    "outcome": 0.00030821246331891317,
+    "right": false
+   },
+   {
+    "session": "2026-10-06",
+    "run": "preopen",
+    "net_ex0dte": 3743756,
+    "truncated": false,
+    "outcome": 0.005497992684414754,
+    "right": true
+   },
    {
     "session": "2026-10-05",
     "run": "preopen",
@@ -660,6 +676,14 @@
   ]
  },
  "recent": [
+  {
+   "date": "2026-10-06",
+   "score": 59,
+   "score_9am": 57,
+   "red_day": 0.005497992684414754,
+   "open_close": 0.0012079964170328417,
+   "snap_close": 0.0010171323225580675
+  },
   {
    "date": "2026-10-05",
    "score": 35,
@@ -771,14 +795,6 @@
    "red_day": -0.004409916675517711,
    "open_close": -0.0071757896076777294,
    "snap_close": -0.007939348582956418
-  },
-  {
-   "date": "2026-09-15",
-   "score": 49,
-   "score_9am": 52,
-   "red_day": -0.004586781374170235,
-   "open_close": -0.003591512506297301,
-   "snap_close": -0.003254466755622132
   }
  ]
 }
