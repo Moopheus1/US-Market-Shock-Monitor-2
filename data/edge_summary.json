@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-10-13T03:01:36Z",
+ "_lastUpdated": "2026-10-14T01:11:47Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -555,7 +555,7 @@
  },
  "flow": {
   "first_logged": "2026-09-30T12:41:20Z",
-  "rows_logged": 34,
+  "rows_logged": 38,
   "preopen": {
    "colour": {
     "n": 9,
@@ -601,6 +601,22 @@
    }
   },
   "recent": [
+   {
+    "session": "2026-10-13",
+    "run": "firsthour",
+    "net_ex0dte": 11121031,
+    "truncated": false,
+    "outcome": null,
+    "right": null
+   },
+   {
+    "session": "2026-10-13",
+    "run": "preopen",
+    "net_ex0dte": -52728057,
+    "truncated": false,
+    "outcome": null,
+    "right": null
+   },
    {
     "session": "2026-10-12",
     "run": "firsthour",
@@ -679,22 +695,6 @@
     "net_ex0dte": 3743756,
     "truncated": false,
     "outcome": 0.005497992684414754,
-    "right": true
-   },
-   {
-    "session": "2026-10-05",
-    "run": "preopen",
-    "net_ex0dte": -22598272,
-    "truncated": false,
-    "outcome": 0.00674341554834168,
-    "right": false
-   },
-   {
-    "session": "2026-10-02",
-    "run": "firsthour",
-    "net_ex0dte": -3557294,
-    "truncated": false,
-    "outcome": -0.0031602973621869257,
     "right": true
    }
   ]
