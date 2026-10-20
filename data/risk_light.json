@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-10-20T01:06:12Z",
+ "_lastUpdated": "2026-10-20T06:04:36Z",
  "_source": "SqueezeMetrics DIX.csv + Yahoo ^VIX, ^VIX3M daily closes",
  "forward_start": "2026-10-06",
  "rule": {
