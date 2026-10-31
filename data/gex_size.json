@@ -1,19 +1,19 @@
 {
- "_lastUpdated": "2026-10-30T15:57:42Z",
+ "_lastUpdated": "2026-10-31T01:37:07Z",
  "_source": "SqueezeMetrics DIX.csv (free, daily)",
  "latest": {
-  "gex_date": "2026-10-29",
-  "gex": 5618881961.770004,
-  "pct_vs_past_year": 0.4801587301587302,
-  "band": 2,
-  "band_name": "middle",
-  "label": "Normal-sized day",
-  "normal_move_pct": 0.5366993374655765,
-  "sp500_close": 7720.39,
-  "expected_size": 1.0272151596279513,
-  "expected_move_pct": 0.5513056956069179,
-  "expected_move_points": 42.562949793066934,
-  "p_bigger_than_normal": 0.3961424332344214
+  "gex_date": "2026-10-30",
+  "gex": 1060383967.3000005,
+  "pct_vs_past_year": 0.05952380952380952,
+  "band": 0,
+  "band_name": "lowest 20%",
+  "label": "BIG day likely",
+  "normal_move_pct": 0.5908767123543379,
+  "sp500_close": 7580.07,
+  "expected_size": 1.3527629675327735,
+  "expected_move_pct": 0.7993161348504632,
+  "expected_move_points": 60.5887225429595,
+  "p_bigger_than_normal": 0.5420289855072464
  },
  "bands": [
   {
@@ -35,10 +35,10 @@
   {
    "name": "middle",
    "label": "Normal-sized day",
-   "n": 674,
-   "avg_size": 1.0272151596279513,
-   "p_bigger": 0.3961424332344214,
-   "p_double": 0.13649851632047477
+   "n": 675,
+   "avg_size": 1.0307103756044367,
+   "p_bigger": 0.397037037037037,
+   "p_double": 0.13777777777777778
   },
   {
    "name": "60-80%",
@@ -136,10 +136,10 @@
     "p_double": 0.14772727272727273
    },
    {
-    "n": 84,
-    "avg_size": 1.050557932160836,
-    "p_bigger": 0.44047619047619047,
-    "p_double": 0.11904761904761904
+    "n": 85,
+    "avg_size": 1.0780394381795975,
+    "p_bigger": 0.4470588235294118,
+    "p_double": 0.12941176470588237
    },
    {
     "n": 76,
@@ -155,22 +155,29 @@
    }
   ]
  },
- "test_days": 3644,
+ "test_days": 3645,
  "test_from": "2012-05-02",
- "test_to": "2026-10-29",
+ "test_to": "2026-10-30",
  "recent": [
+  {
+   "session": "2026-10-30",
+   "band": 2,
+   "label": "Normal-sized day",
+   "expected": 1.0307103756044367,
+   "actual": 3.386485943755562
+  },
   {
    "session": "2026-10-29",
    "band": 2,
    "label": "Normal-sized day",
-   "expected": 1.0272151596279513,
+   "expected": 1.0307103756044367,
    "actual": 0.573451143522776
   },
   {
    "session": "2026-10-28",
    "band": 2,
    "label": "Normal-sized day",
-   "expected": 1.0272151596279513,
+   "expected": 1.0307103756044367,
    "actual": 0.5224084081252218
   },
   {
@@ -198,7 +205,7 @@
    "session": "2026-10-22",
    "band": 2,
    "label": "Normal-sized day",
-   "expected": 1.0272151596279513,
+   "expected": 1.0307103756044367,
    "actual": 2.6701342260087357
   },
   {
@@ -226,7 +233,7 @@
    "session": "2026-10-16",
    "band": 2,
    "label": "Normal-sized day",
-   "expected": 1.0272151596279513,
+   "expected": 1.0307103756044367,
    "actual": 2.400739345097279
   },
   {
@@ -256,13 +263,6 @@
    "label": "QUIET day likely",
    "expected": 0.8422004195801029,
    "actual": 0.10890264923667846
-  },
-  {
-   "session": "2026-10-09",
-   "band": 3,
-   "label": "Somewhat quieter than normal",
-   "expected": 0.9723964927881535,
-   "actual": 1.1464449291529355
   }
  ]
 }
