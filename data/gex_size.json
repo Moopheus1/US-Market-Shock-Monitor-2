@@ -1,19 +1,19 @@
 {
- "_lastUpdated": "2026-11-12T19:57:57Z",
+ "_lastUpdated": "2026-11-13T02:38:56Z",
  "_source": "SqueezeMetrics DIX.csv (free, daily)",
  "latest": {
-  "gex_date": "2026-11-11",
-  "gex": 10272903558.039995,
-  "pct_vs_past_year": 0.9761904761904762,
-  "band": 4,
-  "band_name": "highest 20%",
-  "label": "QUIET day likely",
-  "normal_move_pct": 0.9637330009690064,
-  "sp500_close": 7619.38,
-  "expected_size": 0.8422004195801029,
-  "expected_move_pct": 0.8116563377792889,
-  "expected_move_points": 61.843180669487595,
-  "p_bigger_than_normal": 0.2998986828774063
+  "gex_date": "2026-11-12",
+  "gex": 5758992609.960004,
+  "pct_vs_past_year": 0.5277777777777778,
+  "band": 2,
+  "band_name": "middle",
+  "label": "Normal-sized day",
+  "normal_move_pct": 0.9651661893507557,
+  "sp500_close": 7592.4,
+  "expected_size": 1.0392433506665695,
+  "expected_move_pct": 1.003042544570964,
+  "expected_move_points": 76.15500215400586,
+  "p_bigger_than_normal": 0.3979289940828402
  },
  "bands": [
   {
@@ -51,10 +51,10 @@
   {
    "name": "highest 20%",
    "label": "QUIET day likely",
-   "n": 987,
-   "avg_size": 0.8422004195801029,
-   "p_bigger": 0.2998986828774063,
-   "p_double": 0.0790273556231003
+   "n": 988,
+   "avg_size": 0.8417198749842207,
+   "p_bigger": 0.29959514170040485,
+   "p_double": 0.07894736842105263
   }
  ],
  "by_period": {
@@ -148,17 +148,24 @@
     "p_double": 0.05263157894736842
    },
    {
-    "n": 111,
-    "avg_size": 0.8801706332653056,
-    "p_bigger": 0.35135135135135137,
-    "p_double": 0.07207207207207207
+    "n": 112,
+    "avg_size": 0.8755925236722976,
+    "p_bigger": 0.3482142857142857,
+    "p_double": 0.07142857142857142
    }
   ]
  },
- "test_days": 3653,
+ "test_days": 3654,
  "test_from": "2012-05-02",
- "test_to": "2026-11-11",
+ "test_to": "2026-11-12",
  "recent": [
+  {
+   "session": "2026-11-12",
+   "band": 4,
+   "label": "QUIET day likely",
+   "expected": 0.8417198749842207,
+   "actual": 0.3674223588484098
+  },
   {
    "session": "2026-11-11",
    "band": 1,
@@ -256,13 +263,6 @@
    "label": "BIG day likely",
    "expected": 1.3538013928922976,
    "actual": 1.0135524444086201
-  },
-  {
-   "session": "2026-10-22",
-   "band": 2,
-   "label": "Normal-sized day",
-   "expected": 1.0392433506665695,
-   "actual": 2.6701342260087357
   }
  ]
 }
