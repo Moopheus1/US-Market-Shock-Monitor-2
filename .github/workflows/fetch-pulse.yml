@@ -1,0 +1,35 @@
+name: Fetch Yahoo pre-market pulse (5 min)
+
+on:
+  schedule:
+    # Every 5 min, 08:00-21:55 UTC Mon-Fri (4am ET premarket to after the close, EDT and EST).
+    # GitHub's own scheduler often skips or delays runs at this rate; point an external
+    # dispatcher (cron-job.org) at workflow_dispatch for reliable 5-minute spacing.
+    - cron: '*/5 8-21 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: pulse
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Yahoo Finance data
+        run: python3 scripts/pulse.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pulse.json
+          git diff --cached --quiet || git commit -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main
+          done

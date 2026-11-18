@@ -978,7 +978,7 @@ const YAHOO_KEY_MAP = {
 
 async function loadPulseData() {
   try {
-    const res = await fetch(DATA_BASE + 'pulse.json', { cache: 'no-store' });
+    const res = await fetch('data/pulse.json?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {
@@ -2365,6 +2365,8 @@ function renderPageLoadedTimestamp() {
   calcComposite();
   updateFOMC();
   setInterval(updateFOMC, 60000);
+  // Re-pull every data file every 5 minutes while the tab is visible.
+  setInterval(() => { if (!document.hidden) manualRefresh(); }, 300000);
   document.getElementById('loader').classList.add('done');
 })();
 </script>
