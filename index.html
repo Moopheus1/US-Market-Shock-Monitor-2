@@ -1019,7 +1019,7 @@ function updatePulseUI(data, hasErrors, lastUpdated) {
 
   const age = lastUpdated ? hoursAgo(lastUpdated) : 9999;
   const ageTxt = !lastUpdated ? 'age unknown' : age < (1/60) ? 'just now' : age < 1 ? Math.round(age * 60) + 'm ago' : Math.round(age) + 'h ago';
-  statusEl.textContent = data.length + '/' + PREMARKET_SYMBOLS.length + ' symbols · updated ' + ageTxt;
+  statusEl.textContent = (age > PULSE_STALE_HOURS ? 'STALE, not scored · ' : '') + data.length + '/' + PREMARKET_SYMBOLS.length + ' symbols · updated ' + ageTxt;
   statusEl.className = 'pulse-status ' + (age < 1 ? 'live' : 'error');
 
   data.forEach(d => {
@@ -1579,6 +1579,30 @@ function recomputeAndRenderBias() {
   }
 }
 
+// Pulse older than this is not scored. The job fetches every 5 min, so 45 min = ~9 missed fetches.
+const PULSE_STALE_HOURS = 0.75;
+
+function renderStaleBias(results, lastUpdated) {
+  document.getElementById('biasBar').classList.add('open');
+  const when = lastUpdated
+    ? new Date(lastUpdated).toLocaleString('en-SG', { timeZone: 'Asia/Singapore', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) + ' SGT'
+    : 'unknown time';
+  const old = computeBiasScore(results);
+  document.getElementById('biasScore').textContent = '--';
+  document.getElementById('biasNum').textContent = '--';
+  const fill = document.getElementById('biasFill');
+  fill.style.width = '0%'; fill.className = 'bias-fill';
+  const badge = document.getElementById('biasBadge');
+  badge.textContent = 'stale - no read'; badge.className = 'bias-badge bias-badge-neutral';
+  document.getElementById('biasAction').textContent =
+    'price feed last updated ' + when + ' (' + Math.round(hoursAgo(lastUpdated)) + 'h ago). The score from that data (' + old.score +
+    ') is NOT today\'s - ignore it. Feed runs 4pm-6am SGT on US weekdays.';
+  LAST_BIAS_SCORE = null;
+  const et = document.getElementById('edgeToday');
+  if (et) et.innerHTML = 'No live score right now - the pre-market feed is stale (last update ' + when + ').';
+  updateGlanceRow();
+}
+
 async function fetchRealtime() {
   const pulseData = await loadPulseData();
   const nyNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -1603,9 +1627,14 @@ async function fetchRealtime() {
     yahooLastUpdated = pulseData._lastUpdated || null;
   }
 
-  lastPulseResults = results;
+  // Stale guard (23 Nov 2026): GitHub's scheduler skipped the 5-min pulse job for 2+ days,
+  // so Monday's page scored FRIDAY's -3% crash as "strong bear 1" on an up day, and the
+  // overnight alarm fired off the same stale ES move. Old data is now shown as old, never scored.
+  const pulseStale = results.length > 0 && hoursAgo(yahooLastUpdated) > PULSE_STALE_HOURS;
+
+  lastPulseResults = pulseStale ? [] : results;
   const esLive = results.find(r => r.ticker === 'ES=F');
-  RISK_ES_CHANGE = esLive ? esLive.change : null;
+  RISK_ES_CHANGE = (esLive && !pulseStale) ? esLive.change : null;
   renderRisk();
   updatePulseUI(results, results.length < PREMARKET_SYMBOLS.length, yahooLastUpdated);
   if (pulseData && tnxNotYet) {
@@ -1613,7 +1642,9 @@ async function fetchRealtime() {
     if (el) { el.querySelector('.pulse-change').textContent = 'not scored before 8:20am ET'; }
   }
 
-  if (results.length > 0) {
+  if (pulseStale) {
+    renderStaleBias(results, yahooLastUpdated);
+  } else if (results.length > 0) {
     recomputeAndRenderBias();
   } else {
     document.getElementById('biasBadge').textContent = 'unavailable';

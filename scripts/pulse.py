@@ -32,7 +32,11 @@ for ticker, key in SYMBOLS.items():
         meta = result["meta"]
         current = meta.get("regularMarketPrice") or meta.get("previousClose") or meta.get("chartPreviousClose")
         quote = result.get("indicators", {}).get("quote", [{}])[0]; bars = [x for x in (quote.get("close") or []) if x is not None]; previous = (bars[-2] if len(bars) >= 2 else (bars[0] if bars else None)) or meta.get("chartPreviousClose") or meta.get("previousClose") or meta.get("regularMarketPreviousClose")
-        if current is None or previous is None or previous == 0 or (abs((current - previous) / previous) * 100 > 12 if (current is not None and previous not in (None, 0)) else False): raise ValueError(f"missing/implausible price (current={current}, previous={previous})")
+        # Sanity cap on the day's % move. VIX gets a wide cap: it routinely moves 15-50% on
+        # shock days, and the old flat 12% cap dropped it on exactly those days (20 Nov 2026),
+        # so the live score stopped matching the Edge Tracker formula, which has no cap.
+        cap = 150 if ticker == "^VIX" else 12
+        if current is None or previous is None or previous == 0 or abs((current - previous) / previous) * 100 > cap: raise ValueError(f"missing/implausible price (current={current}, previous={previous})")
 
         out[key] = {"ticker": ticker, "current": current, "previous": previous}
         print(f"OK  {ticker} -> current={current} previous={previous}")
