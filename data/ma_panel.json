@@ -1,0 +1,597 @@
+{
+ "_lastUpdated": "2026-11-28T00:48:47Z",
+ "rows": [
+  {
+   "ticker": "SPY",
+   "price": 728.3200073242188,
+   "bar_date": "2026-11-27",
+   "high": 729.1500244140625,
+   "low": 719.6199951171875,
+   "sma": {
+    "10": 724.87,
+    "20": 738.28,
+    "50": 757.2,
+    "100": 758.37,
+    "200": 733.34
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 686.75,
+   "king": null,
+   "rsi_w": 46.5,
+   "rsi_w_prev": 35.0,
+   "is_etf": true
+  },
+  {
+   "ticker": "QQQ",
+   "price": 650.989990234375,
+   "bar_date": "2026-11-27",
+   "high": 651.3400268554688,
+   "low": 636.719970703125,
+   "sma": {
+    "10": 648.56,
+    "20": 663.51,
+    "50": 705.73,
+    "100": 707.86,
+    "200": 683.69
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 606.22998046875,
+   "king": {
+    "said": "bounce toward $666, then reject down toward $590 ($570-600)",
+    "kind": "price",
+    "target": 590,
+    "reached_on": null,
+    "label": "$590"
+   },
+   "rsi_w": 43.4,
+   "rsi_w_prev": 34.1,
+   "is_etf": true
+  },
+  {
+   "ticker": "IWM",
+   "price": 273.7900085449219,
+   "bar_date": "2026-11-27",
+   "high": 273.9200134277344,
+   "low": 270.68499755859375,
+   "sma": {
+    "10": 268.6,
+    "20": 273.88,
+    "50": 276.93,
+    "100": 286.17,
+    "200": 279.63
+   },
+   "setup_dates": [
+    "2026-11-25"
+   ],
+   "cross_up_date": null,
+   "low20": 256.32000732421875,
+   "king": null,
+   "rsi_w": 46.8,
+   "rsi_w_prev": 34.3,
+   "is_etf": true
+  },
+  {
+   "ticker": "XSP",
+   "price": 729.75,
+   "bar_date": "2026-11-27",
+   "high": 730.4099731445312,
+   "low": 721.1500244140625,
+   "sma": {
+    "10": 726.47,
+    "20": 740.2,
+    "50": 759.57,
+    "100": 760.54,
+    "200": 735.43
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 688.27001953125,
+   "king": null,
+   "rsi_w": 46.3,
+   "rsi_w_prev": 34.6,
+   "is_etf": true
+  },
+  {
+   "ticker": "AAPL",
+   "price": 358.5400085449219,
+   "bar_date": "2026-11-27",
+   "high": 359.5,
+   "low": 355.6400146484375,
+   "sma": {
+    "10": 352.24,
+    "20": 349.15,
+    "50": 343.48,
+    "100": 331.61,
+    "200": 304.82
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 325.3299865722656,
+   "king": {
+    "said": "break its 20 and 50 SMAs, drop to the 100-day SMA",
+    "kind": "sma",
+    "target": 331.61,
+    "reached_on": null,
+    "label": "100-day SMA"
+   },
+   "rsi_w": 65.3,
+   "rsi_w_prev": 59.8,
+   "is_etf": false
+  },
+  {
+   "ticker": "NVDA",
+   "price": 150.49000549316406,
+   "bar_date": "2026-11-27",
+   "high": 151.97999572753906,
+   "low": 145.38999938964844,
+   "sma": {
+    "10": 151.71,
+    "20": 169.32,
+    "50": 202.28,
+    "100": 208.08,
+    "200": 202.68
+   },
+   "setup_dates": [
+    "2026-11-24",
+    "2026-11-27"
+   ],
+   "cross_up_date": null,
+   "low20": 124.5,
+   "king": {
+    "said": "slip back under its 10 SMA for another leg lower (no price given)",
+    "kind": "none",
+    "target": null,
+    "reached_on": null
+   },
+   "rsi_w": 35.7,
+   "rsi_w_prev": 25.0,
+   "is_etf": false
+  },
+  {
+   "ticker": "MSFT",
+   "price": 492.8500061035156,
+   "bar_date": "2026-11-27",
+   "high": 500.4649963378906,
+   "low": 488.8299865722656,
+   "sma": {
+    "10": 501.06,
+    "20": 515.27,
+    "50": 519.45,
+    "100": 490.97,
+    "200": 445.33
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 477.3900146484375,
+   "king": {
+    "said": "break its 100 SMA, drop to the 200-day SMA",
+    "kind": "sma",
+    "target": 445.33,
+    "reached_on": null,
+    "label": "200-day SMA"
+   },
+   "rsi_w": 52.6,
+   "rsi_w_prev": 50.5,
+   "is_etf": false
+  },
+  {
+   "ticker": "AMZN",
+   "price": 254.1199951171875,
+   "bar_date": "2026-11-27",
+   "high": 255.27499389648438,
+   "low": 248.4499969482422,
+   "sma": {
+    "10": 256.05,
+    "20": 257.7,
+    "50": 255.17,
+    "100": 255.44,
+    "200": 246.03
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 229.36000061035156,
+   "king": {
+    "said": "break down through its 200-day SMA",
+    "kind": "sma",
+    "target": 246.03,
+    "reached_on": "2026-11-25",
+    "label": "200-day SMA"
+   },
+   "rsi_w": 51.1,
+   "rsi_w_prev": 48.2,
+   "is_etf": false
+  },
+  {
+   "ticker": "GOOGL",
+   "price": 274.9599914550781,
+   "bar_date": "2026-11-27",
+   "high": 279.5199890136719,
+   "low": 270.0299987792969,
+   "sma": {
+    "10": 278.93,
+    "20": 282.61,
+    "50": 316.79,
+    "100": 331.28,
+    "200": 336.14
+   },
+   "setup_dates": [
+    "2026-11-27"
+   ],
+   "cross_up_date": null,
+   "low20": 262.7300109863281,
+   "king": {
+    "said": "reject off the 10 SMA, next leg lower (no price given)",
+    "kind": "none",
+    "target": null,
+    "reached_on": null
+   },
+   "rsi_w": 36.4,
+   "rsi_w_prev": 32.9,
+   "is_etf": false
+  },
+  {
+   "ticker": "META",
+   "price": 628.9600219726562,
+   "bar_date": "2026-11-27",
+   "high": 636.6199951171875,
+   "low": 620.7999877929688,
+   "sma": {
+    "10": 608.67,
+    "20": 615.49,
+    "50": 671.35,
+    "100": 639.02,
+    "200": 627.33
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 558.6799926757812,
+   "king": null,
+   "rsi_w": 49.6,
+   "rsi_w_prev": 41.9,
+   "is_etf": false
+  },
+  {
+   "ticker": "TSLA",
+   "price": 400.0,
+   "bar_date": "2026-11-27",
+   "high": 401.17999267578125,
+   "low": 384.6600036621094,
+   "sma": {
+    "10": 380.43,
+    "20": 381.98,
+    "50": 377.84,
+    "100": 364.47,
+    "200": 381.0
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 338.1499938964844,
+   "king": {
+    "said": "break all its SMAs, another leg down (no price given)",
+    "kind": "none",
+    "target": null,
+    "reached_on": null
+   },
+   "rsi_w": 54.2,
+   "rsi_w_prev": 45.1,
+   "is_etf": false
+  },
+  {
+   "ticker": "AVGO",
+   "price": 312.3399963378906,
+   "bar_date": "2026-11-27",
+   "high": 313.125,
+   "low": 304.75,
+   "sma": {
+    "10": 325.49,
+    "20": 325.36,
+    "50": 339.85,
+    "100": 360.24,
+    "200": 367.16
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 278.0,
+   "king": {
+    "said": "keep selling off with the market (no price given)",
+    "kind": "none",
+    "target": null,
+    "reached_on": null
+   },
+   "rsi_w": 42.7,
+   "rsi_w_prev": 41.0,
+   "is_etf": false
+  },
+  {
+   "ticker": "AMD",
+   "price": 424.5400085449219,
+   "bar_date": "2026-11-27",
+   "high": 426.80999755859375,
+   "low": 398.590087890625,
+   "sma": {
+    "10": 468.28,
+    "20": 482.13,
+    "50": 545.94,
+    "100": 520.76,
+    "200": 434.01
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 370.3999938964844,
+   "king": null,
+   "rsi_w": 44.7,
+   "rsi_w_prev": 44.7,
+   "is_etf": false
+  },
+  {
+   "ticker": "MU",
+   "price": 646.9500122070312,
+   "bar_date": "2026-11-27",
+   "high": 654.3300170898438,
+   "low": 607.2703857421875,
+   "sma": {
+    "10": 678.57,
+    "20": 728.44,
+    "50": 888.86,
+    "100": 907.82,
+    "200": 777.66
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 548.1300048828125,
+   "king": {
+    "said": "sharp leg down toward $380",
+    "kind": "price",
+    "target": 380,
+    "reached_on": null,
+    "label": "$380"
+   },
+   "rsi_w": 41.2,
+   "rsi_w_prev": 38.1,
+   "is_etf": false
+  },
+  {
+   "ticker": "PLTR",
+   "price": 172.1699981689453,
+   "bar_date": "2026-11-27",
+   "high": 173.22000122070312,
+   "low": 164.8000030517578,
+   "sma": {
+    "10": 159.51,
+    "20": 165.1,
+    "50": 182.46,
+    "100": 169.87,
+    "200": 154.48
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 142.27999877929688,
+   "king": {
+    "said": "reject off the 10 SMA, next leg lower (no price given)",
+    "kind": "none",
+    "target": null,
+    "reached_on": null
+   },
+   "rsi_w": 51.8,
+   "rsi_w_prev": 43.4,
+   "is_etf": false
+  },
+  {
+   "ticker": "INTC",
+   "price": 57.400001525878906,
+   "bar_date": "2026-11-27",
+   "high": 58.369998931884766,
+   "low": 54.54999923706055,
+   "sma": {
+    "10": 55.83,
+    "20": 57.63,
+    "50": 86.67,
+    "100": 91.92,
+    "200": 87.7
+   },
+   "setup_dates": [
+    "2026-11-24"
+   ],
+   "cross_up_date": null,
+   "low20": 49.15999984741211,
+   "king": {
+    "said": "reject back down toward $42",
+    "kind": "price",
+    "target": 42,
+    "reached_on": null,
+    "label": "$42"
+   },
+   "rsi_w": 38.1,
+   "rsi_w_prev": 34.8,
+   "is_etf": false
+  },
+  {
+   "ticker": "TSM",
+   "price": 353.3399963378906,
+   "bar_date": "2026-11-27",
+   "high": 354.3599853515625,
+   "low": 344.5953063964844,
+   "sma": {
+    "10": 357.38,
+    "20": 375.58,
+    "50": 416.72,
+    "100": 417.07,
+    "200": 403.41
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 318.4800109863281,
+   "king": null,
+   "rsi_w": 41.4,
+   "rsi_w_prev": 33.4,
+   "is_etf": false
+  },
+  {
+   "ticker": "SNDK",
+   "price": 85.36000061035156,
+   "bar_date": "2026-11-27",
+   "high": 85.44000244140625,
+   "low": 77.0999984741211,
+   "sma": {
+    "10": 104.59,
+    "20": 123.09,
+    "50": 168.31,
+    "100": 179.02,
+    "200": 160.76
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 77.0999984741211,
+   "king": null,
+   "rsi_w": 35.0,
+   "rsi_w_prev": 36.3,
+   "is_etf": false
+  },
+  {
+   "ticker": "WDC",
+   "price": 292.1099853515625,
+   "bar_date": "2026-11-27",
+   "high": 292.6000061035156,
+   "low": 278.54998779296875,
+   "sma": {
+    "10": 284.17,
+    "20": 297.63,
+    "50": 362.34,
+    "100": 423.39,
+    "200": 422.49
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 244.77000427246094,
+   "king": null,
+   "rsi_w": 40.9,
+   "rsi_w_prev": 37.4,
+   "is_etf": false
+  },
+  {
+   "ticker": "STX",
+   "price": 509.6600036621094,
+   "bar_date": "2026-11-27",
+   "high": 509.8699951171875,
+   "low": 480.3399963378906,
+   "sma": {
+    "10": 501.06,
+    "20": 522.22,
+    "50": 680.34,
+    "100": 762.15,
+    "200": 704.62
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 432.0400085449219,
+   "king": null,
+   "rsi_w": 40.0,
+   "rsi_w_prev": 36.4,
+   "is_etf": false
+  },
+  {
+   "ticker": "SMH",
+   "price": 440.05999755859375,
+   "bar_date": "2026-11-27",
+   "high": 440.2650146484375,
+   "low": 421.8800048828125,
+   "sma": {
+    "10": 446.53,
+    "20": 470.51,
+    "50": 538.7,
+    "100": 552.09,
+    "200": 525.78
+   },
+   "setup_dates": [],
+   "cross_up_date": null,
+   "low20": 393.8800048828125,
+   "king": null,
+   "rsi_w": 39.5,
+   "rsi_w_prev": 33.1,
+   "is_etf": true
+  }
+ ],
+ "failed": [],
+ "king_since": "2026-11-23",
+ "weights": {
+  "SPY": {
+   "source": "State Street SPY holdings file, as of 25-Nov-2026",
+   "complete": true,
+   "w": {
+    "AAPL": 8.365674,
+    "NVDA": 5.824482,
+    "MSFT": 5.864666,
+    "AMZN": 3.867608,
+    "GOOGL": 4.660139,
+    "META": 2.168183,
+    "TSLA": 1.727134,
+    "AVGO": 2.307639,
+    "AMD": 1.068525,
+    "MU": 1.0947,
+    "PLTR": 0.60692,
+    "INTC": 0.436199,
+    "TSM": null,
+    "SNDK": 0.13864,
+    "WDC": 0.158416,
+    "STX": 0.172645,
+    "SMH": null
+   }
+  },
+  "QQQ": {
+   "source": "Yahoo Finance QQQ top-10 holdings (only the 10 largest are published)",
+   "complete": false,
+   "w": {
+    "AAPL": 8.15917,
+    "NVDA": 8.0005705,
+    "MSFT": 6.286739600000001,
+    "AMZN": 4.2053199999999995,
+    "GOOGL": 2.6636802,
+    "META": 2.9663898,
+    "TSLA": 3.40695,
+    "AVGO": null,
+    "AMD": 3.69033,
+    "MU": 4.47466,
+    "PLTR": null,
+    "INTC": null,
+    "TSM": null,
+    "SNDK": null,
+    "WDC": null,
+    "STX": null,
+    "SMH": null
+   }
+  }
+ },
+ "odds": {
+  "SPY": {
+   "since_2001": {
+    "setup_n": 109,
+    "setup_newlow": 0.7155963302752294,
+    "base_n": 1457,
+    "base_newlow": 0.6273164035689773
+   },
+   "since_2015": {
+    "setup_n": 42,
+    "setup_newlow": 0.6428571428571429,
+    "base_n": 593,
+    "base_newlow": 0.581787521079258
+   }
+  },
+  "QQQ": {
+   "since_2001": {
+    "setup_n": 116,
+    "setup_newlow": 0.6551724137931034,
+    "base_n": 1464,
+    "base_newlow": 0.630464480874317
+   },
+   "since_2015": {
+    "setup_n": 47,
+    "setup_newlow": 0.5319148936170213,
+    "base_n": 614,
+    "base_newlow": 0.5928338762214984
+   }
+  }
+ },
+ "_weightsDate": "2026-11-28"
+}

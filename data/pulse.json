@@ -1,0 +1,69 @@
+{
+  "es": {
+    "ticker": "ES=F",
+    "current": 7308.25,
+    "previous": 7195.75,
+    "market_time_utc": "2026-11-27T18:14:59Z"
+  },
+  "nq": {
+    "ticker": "NQ=F",
+    "current": 26765.0,
+    "previous": 26100.25,
+    "market_time_utc": "2026-11-27T18:14:59Z"
+  },
+  "ym": {
+    "ticker": "YM=F",
+    "current": 50821.0,
+    "previous": 50228.0,
+    "market_time_utc": "2026-11-27T18:14:58Z"
+  },
+  "rty": {
+    "ticker": "RTY=F",
+    "current": 2754.4,
+    "previous": 2706.10009765625,
+    "market_time_utc": "2026-11-27T18:14:59Z"
+  },
+  "vix_spot": {
+    "ticker": "^VIX",
+    "current": 23.81,
+    "previous": 26.799999237060547,
+    "market_time_utc": "2026-11-27T18:15:00Z"
+  },
+  "tnx": {
+    "ticker": "^TNX",
+    "current": 4.936,
+    "previous": 4.8480000495910645,
+    "market_time_utc": "2026-11-27T19:59:54Z"
+  },
+  "dxy_spot": {
+    "ticker": "DX-Y.NYB",
+    "current": 104.014,
+    "previous": 103.66999816894531,
+    "market_time_utc": "2026-11-27T21:59:59Z"
+  },
+  "cl": {
+    "ticker": "CL=F",
+    "current": 83.08,
+    "previous": 83.68000030517578,
+    "market_time_utc": "2026-11-27T19:44:59Z"
+  },
+  "tnx_est": {
+    "ticker": "ZN=F",
+    "zn_current": 106.53125,
+    "zn_previous": 107.1875,
+    "zn_time_utc": "2026-11-27T18:14:59Z",
+    "tnx_close": 4.848,
+    "estimate": 4.942,
+    "change_bp": 9.4,
+    "bp_per_pct": -15.3
+  },
+  "spy_live": {
+    "price": 728.32,
+    "prev_close": 716.7,
+    "market_time_utc": "2026-11-27T18:00:00Z",
+    "session_date": "2026-11-27",
+    "price_1030": 723.0599975585938
+  },
+  "_lastUpdated": "2026-11-28T00:48:56Z",
+  "_failedSymbols": []
+}
