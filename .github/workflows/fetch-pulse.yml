@@ -5,9 +5,12 @@ name: Fetch Yahoo pre-market pulse (5 min)
 # 23 Nov entirely, so the page scored Friday's -3% crash as "strong bear 1" on an up day.
 # Now ONE run stays alive and fetches every 5 min by itself, for up to ~5h50m or until
 # 22:00 UTC. Hourly triggers are only kick-starts: while a loop is running, the next
-# trigger waits in the queue (one pending max) and takes over when the loop ends,
-# so a few missed triggers no longer leave gaps.
-# For guaranteed starts, point cron-job.org at workflow_dispatch hourly (like the other dashboards).
+# trigger waits in the queue (one pending max) and takes over when the loop ends.
+#
+# Data goes to the `pulse-data` branch, NOT main (changed 23 Nov 2026): a commit to main
+# every 5 min meant ~12 GitHub Pages rebuilds an hour, over Pages' soft limit of 10.
+# The page reads it from raw.githubusercontent.com. The branch is kept to one commit
+# (amend + force push), so it never grows.
 
 on:
   schedule:
@@ -31,6 +34,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --depth 1 origin pulse-data
+          git worktree add -B pulse-data ../pd origin/pulse-data
+
           now=$(date -u +%s)
           deadline=$((now + 350 * 60))
           stop=$(date -u -d "$(date -u +%F) 22:00" +%s)
@@ -40,17 +46,21 @@ jobs:
             echo "Outside 08:00-22:00 UTC Mon-Fri - single fetch only"
             deadline=$((now + 1))
           fi
+
           while :; do
-            git pull --rebase --quiet origin main || true
-            python3 scripts/pulse.py || echo "pulse.py failed this round"
-            git add data/pulse.json
-            if ! git diff --cached --quiet; then
-              git commit -q -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
-              for i in 1 2 3; do
-                git push -q && break
-                sleep 5
-                git pull --rebase --quiet origin main
-              done
+            if python3 scripts/pulse.py; then
+              mkdir -p ../pd/data
+              cp data/pulse.json ../pd/data/pulse.json
+              (
+                cd ../pd
+                git add data/pulse.json
+                if ! git diff --cached --quiet; then
+                  git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
+                  git push -q --force origin pulse-data || echo "push failed this round"
+                fi
+              )
+            else
+              echo "pulse.py failed this round"
             fi
             next=$(( $(date -u +%s) + 300 ))
             [ "$next" -ge "$deadline" ] && break

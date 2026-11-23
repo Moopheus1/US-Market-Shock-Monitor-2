@@ -976,15 +976,27 @@ const YAHOO_KEY_MAP = {
   '^VIX': 'vix_spot', '^TNX': 'tnx', 'DX-Y.NYB': 'dxy_spot', 'CL=F': 'cl'
 };
 
+// Since 23 Nov 2026 the 5-min feed writes to the pulse-data branch (no Pages rebuild per
+// update), read via raw.githubusercontent.com. The old copy on main is kept as a fallback;
+// whichever has the newer _lastUpdated wins.
+const PULSE_URLS = [
+  'https://raw.githubusercontent.com/Moopheus1/US-Market-Shock-Monitor-2/pulse-data/data/pulse.json',
+  'data/pulse.json'
+];
+
 async function loadPulseData() {
-  try {
-    const res = await fetch('data/pulse.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    console.warn('pulse.json load failed', e);
-    return null;
-  }
+  const got = await Promise.all(PULSE_URLS.map(async u => {
+    try {
+      const res = await fetch(u + '?t=' + Date.now(), { cache: 'no-store' });
+      return res.ok ? await res.json() : null;
+    } catch (e) {
+      console.warn('pulse.json load failed: ' + u, e);
+      return null;
+    }
+  }));
+  const ok = got.filter(d => d && d._lastUpdated);
+  if (ok.length === 0) return null;
+  return ok.reduce((a, b) => (new Date(b._lastUpdated) > new Date(a._lastUpdated) ? b : a));
 }
 
 function computeBiasScore(data) {
