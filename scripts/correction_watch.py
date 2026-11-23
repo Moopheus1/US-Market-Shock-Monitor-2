@@ -178,13 +178,41 @@ def main():
             no_follow += 1
 
     def curve(w):
-        eq = pk_ = 1.0; mdd = 0.0; n = 0
+        """w(r) = share of the S&P held for the session AFTER close r. Index only, no costs."""
+        eq = pk_ = 1.0; mdd = 0.0; n = 0; held = 0
         for r in test:
             nx = fwd(c, r["i"], 1)
             if nx is None:
                 continue
-            eq *= 1 + w(r) * nx; pk_ = max(pk_, eq); mdd = min(mdd, eq / pk_ - 1); n += 1
-        return {"cagr": eq ** (252 / n) - 1, "max_dd": mdd}
+            x = w(r)
+            eq *= 1 + x * nx; pk_ = max(pk_, eq); mdd = min(mdd, eq / pk_ - 1); n += 1; held += x > 0
+        return {"cagr": eq ** (252 / n) - 1, "max_dd": mdd, "end_10k": 10000 * eq, "time_in": held / n}
+
+    def sell_amber_buy_red():
+        pos = [1.0]
+        def w(r):
+            if r["lvl"] == 1:
+                pos[0] = 0.0
+            elif r["lvl"] == 2:
+                pos[0] = 1.0
+            return pos[0]
+        return w
+
+    # What happened after the FIRST amber / FIRST red close of each spell (20 sessions on)
+    def after_first(L):
+        out, prev = [], 0
+        for r in test:
+            if r["lvl"] == L and prev != L and (L == 2 or prev == 0):
+                f = fwd(c, r["i"], 20)
+                if f is not None:
+                    dip = min(c[r["i"]:r["i"] + 21]) / c[r["i"]] - 1
+                    out.append((f, dip))
+            prev = r["lvl"]
+        if not out:
+            return {"n": 0}
+        f = [x for x, _ in out]
+        return {"n": len(out), "f20_avg": st.mean(f), "f20_median": st.median(f), "higher": sum(x > 0 for x in f) / len(f),
+                "avg_dip": st.mean(d for _, d in out), "worst_dip": min(d for _, d in out)}
 
     periods = {}
     for k, (a, b) in {"2012-2019": ("2012", "2020"), "2020-2024": ("2020", "2025"), "2025-now": ("2025", FORWARD_START)}.items():
@@ -204,7 +232,12 @@ def main():
         "events": events,
         "red_spells": {"n": len(spells), "no_further_3pct": no_follow,
                        "median_len": st.median([e["i"] - s["i"] + 1 for s, e in spells]) if spells else 0},
-        "what_if": {"always_in": curve(lambda r: 1), "out_on_red": curve(lambda r: 0 if r["lvl"] == 2 else 1)},
+        # half_on_red is the suggested sizing rule. NOTE: chosen on 24 Nov 2026 AFTER seeing the
+        # other rules' results (the flags were fixed before testing; this sizing was not).
+        "what_if": {"always_in": curve(lambda r: 1), "half_on_red": curve(lambda r: 0.5 if r["lvl"] == 2 else 1),
+                    "out_on_red": curve(lambda r: 0 if r["lvl"] == 2 else 1),
+                    "sell_amber_buy_red": curve(sell_amber_buy_red())},
+        "after_first_amber": after_first(1), "after_first_red": after_first(2),
         "forward": {"days": len(live), "levels": level_stats(c, live, len(live)) if live else []},
         "recent": [{"d": r["d"], "lvl": r["lvl"], "n": r["n"], "close": r["close"]} for r in rows[-45:]],
         "vix_recent": [{"date": d, "value": vix[d]} for d in sorted(vix)[-30:]],

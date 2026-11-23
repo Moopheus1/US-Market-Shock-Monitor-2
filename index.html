@@ -1355,28 +1355,34 @@ function renderCW() {
   const ageDays = (Date.now() - asOf.getTime()) / 864e5;
   document.getElementById('cwAsOf').textContent = '(from the ' + asOf.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' close' + (ageDays > 4 ? ' — STALE' : '') + ')';
   const colours = ['#15803d', '#b45309', '#b91c1c'];
-  const calls = ['GREEN — no correction signs', 'AMBER — a pullback may be starting', 'RED — a correction is underway'];
-  const g = LV[0], r = LV[2];
+  const calls = ['GREEN — normal size', 'AMBER — don\'t sell, be pickier', 'RED — half size'];
+  const todo = [
+    '<strong>What to do:</strong> trade your normal size.',
+    '<strong>What to do:</strong> keep what you hold — do <strong>not</strong> sell because of amber. Be pickier and smaller on new entries. Back to normal when it returns to green.',
+    '<strong>What to do:</strong> cut to <strong>half your usual size</strong> and don\'t add new longs. Don\'t buy <em>because</em> it\'s red. Back to full size once it drops to amber or green.'];
+  const g = LV[0], r = LV[2], FA = C.after_first_amber || {}, FR = C.after_first_red || {};
   const lead = [
-    'Nothing (or only one thing) is flashing. ' + pct(g.share) + ' of days since ' + C.test_from.slice(0, 4) + ' looked like this.',
-    'Two of five stress signs are on. Watch closely and keep new positions smaller; this level often fades back to green, but most big falls since ' + C.test_from.slice(0, 4) + ' passed through it first.',
-    'Three or more stress signs are on. This is when to be <strong>smaller</strong> (or out of new trades). It is <strong>not a sell or short signal</strong>: after past red days the S&amp;P\'s next 20 sessions averaged <strong>' + (r.f20_avg >= 0 ? '+' : '') + pct(r.f20_avg, 1) + '</strong> (green days: ' + (g.f20_avg >= 0 ? '+' : '') + pct(g.f20_avg, 1) + ') — stress tends to bounce — but the worst 20-session fall from a red day was ' + pct(r.f20_worst) + '.'][L.level];
+    'No correction signs (0–1 of 5 flags). ' + pct(g.share) + ' of days since ' + C.test_from.slice(0, 4) + ' looked like this.',
+    'Two of five stress signs are on — a pullback may be starting. Amber usually fades: after the first amber close the S&amp;P was higher 20 sessions later <strong>' + pct(FA.higher) + '</strong> of the time (' + FA.n + ' cases). But most big falls since ' + C.test_from.slice(0, 4) + ' passed through amber first.',
+    'Three or more stress signs are on — a correction is underway. It is <strong>not a sell or short signal, and not a buy signal either</strong>: buying at the first red close was higher 20 sessions later only ' + pct(FR.higher) + ' of the time, with an average dip of ' + pct(FR.avg_dip, 1) + ' first and a worst of ' + pct(FR.worst_dip) + ' (Feb 2020). Red means big swings both ways.'][L.level];
   const F = L.flags, why = [];
   why.push((F.vix25 ? '🔴 ' : '⚪ ') + 'VIX <strong>' + L.vix.toFixed(1) + '</strong> (trips at ' + R.vix_stress + ')');
   why.push((F.inverted ? '🔴 ' : '⚪ ') + 'VIX ' + L.vix.toFixed(1) + ' vs 3-month VIX ' + L.vix3m.toFixed(1) + (F.inverted ? ' — <strong>inverted</strong>' : ' — normal'));
   why.push((F.below50 ? '🔴 ' : '⚪ ') + 'S&amp;P <strong>' + usd(L.close) + '</strong> vs 50-day avg ' + usd(L.ma50) + ' (' + sgn(L.close - L.ma50) + ')');
   why.push((F.below200 ? '🔴 ' : '⚪ ') + 'vs 200-day avg ' + usd(L.ma200) + ' (' + sgn(L.close - L.ma200) + ')');
   why.push((F.credit ? '🔴 ' : '⚪ ') + 'credit (HYG vs IEF) ' + (L.credit_chg >= 0 ? '+' : '') + (100 * L.credit_chg).toFixed(1) + '% over 20 sessions (trips at −' + (100 * R.credit_drop).toFixed(0) + '%)');
-  body.innerHTML = '<span class="risk-call" style="color:' + colours[L.level] + '">' + calls[L.level] + '</span> <span class="muted">' + L.n + ' of 5 flags</span><br>' + lead +
-    '<br><span class="muted">' + why.join(' · ') + '</span>';
+  body.innerHTML = '<span class="risk-call" style="color:' + colours[L.level] + '">' + calls[L.level] + '</span> <span class="muted">' + L.n + ' of 5 flags</span><br>' +
+    todo[L.level] + '<br>' + lead + '<br><span class="muted">' + why.join(' · ') + '</span>' +
+    '<br><span class="muted"><strong>vs the risk light (Part II):</strong> that one sizes <em>tomorrow\'s day trades</em> by how big the next session\'s swing is likely to be. This card sizes <em>positions you hold for days to weeks</em>. If both are red: day trades per the risk light, swing positions at half size.</span>';
   document.getElementById('cwCard').className = 'edge-rule risk l' + L.level;
 
   const stripCol = ['var(--green)', '#f59e0b', 'var(--red)'];
   document.getElementById('cwStrip').innerHTML = (C.recent || []).map(x =>
     '<span style="background:' + stripCol[x.lvl] + '" title="' + x.d + ': ' + ['green', 'amber', 'red'][x.lvl] + ' (' + x.n + '/5), S&P ' + usd(x.close) + '"></span>').join('');
 
+  const act = ['normal size', 'don\'t sell, be pickier', 'half size'];
   document.getElementById('cwGrid').innerHTML = LV.map((x, k) =>
-    '<div class="risk-cell l' + k + (k === L.level ? ' on' : '') + '"><b>' + ['🟢 Green', '🟠 Amber', '🔴 Red'][k] + '</b>' +
+    '<div class="risk-cell l' + k + (k === L.level ? ' on' : '') + '"><b>' + ['🟢 Green', '🟠 Amber', '🔴 Red'][k] + ' — ' + act[k] + '</b>' +
     pct(x.share) + ' of days · next day typical move ±' + (100 * x.next_abs).toFixed(2) + '%<br>' +
     'next 20 sessions: avg ' + (x.f20_avg >= 0 ? '+' : '') + pct(x.f20_avg, 1) + ', fell ' + pct(x.f20_down) + ' of the time<br>' +
     'worst 20-session fall ' + pct(x.f20_worst) + '</div>').join('');
@@ -1393,7 +1399,11 @@ function renderCW() {
     '<table class="cw-table"><tr><th>fall</th><th>peak → low</th><th>first amber at</th><th>first red at</th></tr>' + evRows + '</table>' +
     '<br><strong>What it is not:</strong> it confirms a correction, it does not see one coming — fast shocks (Feb 2018, Aug 2024) only turned red near the bottom, and Sep 2020 never did. ' +
     RS.n + ' red spells, typically ' + RS.median_len + ' sessions long; ' + RS.no_further_3pct + ' of them were not followed by a further 3% drop within 30 sessions. ' +
-    '<strong>Cost of staying out:</strong> holding the S&amp;P every day made ' + pct(W.always_in.cagr, 1) + ' a year (worst fall ' + pct(-W.always_in.max_dd) + '); sitting out red days made ' + pct(W.out_on_red.cagr, 1) + ' (worst fall ' + pct(-W.out_on_red.max_dd) + '). A smoother ride, not more profit (index only, no costs). ' +
+    '<br><br><strong>Which way to use it</strong> — $10,000 in the S&amp;P from ' + C.test_from.slice(0, 4) + ' to ' + C.test_to.slice(0, 4) + ' (index only, no costs or tax):' +
+    '<table class="cw-table"><tr><th>rule</th><th>ends at</th><th>per year</th><th>worst fall</th><th>time in market</th></tr>' +
+    [['Just hold', W.always_in], ['<strong>Half size on red, full otherwise (suggested)</strong>', W.half_on_red], ['Out completely on red', W.out_on_red], ['Sell on amber, buy back on red', W.sell_amber_buy_red]]
+      .filter(x => x[1]).map(x => '<tr><td>' + x[0] + '</td><td>' + usd(x[1].end_10k) + '</td><td>' + pct(x[1].cagr, 1) + '</td><td>' + pct(x[1].max_dd, 1) + '</td><td>' + pct(x[1].time_in) + '</td></tr>').join('') +
+    '</table><span class="muted">Half size on red trades a little return for a much smaller worst fall. Honest caveat: the five flags were fixed before testing, but the half-size rule was picked on 24 Nov 2026 after seeing these results — treat it as a sensible sizing rule, not a proven edge. Selling on amber is the worst option: amber usually fades, and red often never comes to buy back.</span><br><br>' +
     (fw.days ? 'Live test since ' + C.forward_start + ': ' + fw.days + ' sessions.' : 'Live test starts ' + C.forward_start + ' — the rule was frozen before then.');
 }
 
