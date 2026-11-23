@@ -132,6 +132,12 @@
   .risk-cell.on { background: var(--card-bg); color: var(--text-primary); }
   .risk-cell.on.l0 { border-color: var(--green); } .risk-cell.on.l1 { border-color: #f59e0b; } .risk-cell.on.l2 { border-color: var(--red); }
   .risk-cell.on b { color: var(--text-primary); }
+  .cw-strip { display: flex; gap: 2px; margin-top: 8px; flex-wrap: wrap; }
+  .cw-strip span { width: 9px; height: 16px; border-radius: 2px; display: inline-block; }
+  .cw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  .cw-table th, .cw-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+  .cw-table th { color: var(--text-muted); font-weight: 600; }
+  .signpost-note { font-size: 12px; color: var(--text-muted); margin: -8px 0 14px 0; line-height: 1.5; }
   .risk-alarm { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.45); font-size: 13px; line-height: 1.5; color: var(--text-primary); }
   .size-bands { display: flex; gap: 4px; margin-top: 10px; }
   .size-band { flex: 1; text-align: center; font-size: 11px; line-height: 1.3; padding: 6px 2px; border-radius: 6px; background: var(--bg); color: var(--text-muted); border: 1px solid transparent; }
@@ -545,7 +551,7 @@
   </div>
 
 
-  <div class="section-heading" id="partIHeading"><h2>Part I — Macro Regime</h2><span class="section-heading-sub">strategic, 2-4 week horizon — FRED data, 1-day lag</span><div class="section-heading-line"></div></div>
+  <div class="section-heading" id="partIHeading"><h2>Part I — Macro Regime</h2><span class="section-heading-sub">strategic, 2-4 week horizon — FRED data (VIX: same-day close) + fast correction watch</span><div class="section-heading-line"></div></div>
   <div class="signal-bar" id="signalBar">
     <div class="signal-left">
       <span class="signal-badge badge-orange" id="mainBadge">reduce risk</span>
@@ -561,6 +567,15 @@
   </div>
 
   <div class="signpost-list" id="signpostList"></div>
+  <div class="signpost-note" id="signpostNote"></div>
+
+  <div class="edge-rule risk" id="cwCard" style="margin:0 0 18px 0">
+    <div class="edge-rule-head">📉 Correction watch — is a pullback already underway? <span class="muted" id="cwAsOf"></span></div>
+    <div class="edge-rule-body" id="cwBody">loading...</div>
+    <div class="cw-strip" id="cwStrip" title="last 45 sessions, oldest on the left"></div>
+    <div class="risk-grid" id="cwGrid"></div>
+    <div class="edge-note" id="cwNote" style="margin-top:8px"></div>
+  </div>
 
   <div class="tabs">
     <button class="tab active" data-cat="all">all indicators</button>
@@ -609,6 +624,7 @@
         Each indicator triggers on LEVEL (in its own red zone), TREND (moved fast toward red recently, off real historical FRED values), or for VIX and treasury yields specifically, a third condition tuned for crash detection - see below. Either firing counts as triggered; the number shown is a straight count, not a blended average.
         <strong style="color:var(--text-primary)">Backtested against 2015-2026 (2,902 trading days, re-run July 2026 with publication-lag-aware, as-of-date data):</strong> the composite was re-validated against all 9 SPY drawdowns of 8%+ in the window. Slow, regime-driven events are detected well: 2015-16 growth scare peaked at 46%, COVID at 54%, and the 2022 bear market at 54%, against a calm-day median of 15% - readings of 40%+ occurred on only 0.9% of calm days, and 60%+ never occurred outside a genuine event. This re-run also caught and fixed three scoring bugs the previous version shipped with: CPI was scored on its raw index level against YoY-percentage zones (permanently triggered), the dollar index was scored on the broad DTWEXBGS scale against zones calibrated for ICE DXY (triggered on 94% of all days), and the treasury flight-to-safety collapse check referenced series that were never actually scored (dead code - now live via the two treasury tiles). Membership changes from the re-run: VIX term structure and NFCI promoted into the count (see their cards), credit spreads demoted to context (source data truncated at FRED; NFCI covers the same conditions channel with 50+ years of history), jobless claims and put/call evaluated and rejected (claims LAG equity corrections - 0.4x lift; put/call has a 2019-2026 data hole).
         <strong style="color:var(--text-primary)">Known, honest limitation:</strong> fast vol-shock corrections - Feb 2018, Q4 2018, Aug 2024, Feb-Apr 2025 - peak at only ~23% under this model. That is not a calibration miss; it is structural. A count of mostly-macro indicators cannot turn red in two weeks. This composite is a REGIME gauge: it tells you when the environment is fragile (2015-16, 2020, 2022 all crossed 40%), not when a crash starts. The two fastest inputs (VIX stress zones, VIX term structure) are the only ones that move intra-correction - watch those cards directly, and Part II above, for anything faster than a regime shift. Prior published figures (72.7% COVID peak, 2,896 days) could not be reproduced under the production scoring logic and are superseded by this run.
+        <strong style="color:var(--text-primary)">Re-check, 24 Nov 2026:</strong> during the 6 Oct–20 Nov slide (S&amp;P $7,819 → $6,910) the count never went above 5/14, exactly as the limitation above predicts — this is not a bug. The backtest was re-run on 2012–2026 data: it reproduces the figures above (COVID 54%, 2022 54%, 2015–16 46%, calm-day median 15%). Two candidate fixes were tested and only one kept. <em>Kept:</em> VIX is now scored from the same-day Yahoo close (FRED's copy arrived 1–2 days late; on 20 Nov it was still scoring 24.6 against an actual 35.9). It barely changes the history, but it is correct. <em>Rejected:</em> making the long-running inputs (consumer confidence, CPI, oil) trend-only. It halved the calm-day reading (15% → 8%) but also removed the only early 40%+ reading the model ever gave — 2022, where CPI's level carried it. Instead, inputs stuck on for 3+ months are now labelled as such under the count. For speed, use the <strong>correction watch</strong> card below the count.<br><br>
         This is a 2–4 week strategic read (FRED data has a 1-day lag) — it answers "are we in a risky regime," not "what happens today." For that, see Part II below.
       </div>
     </div>
@@ -907,18 +923,20 @@ async function loadFREDData() {
           indicators[idx].chartData = chartData;
           indicators[idx].sourceName = 'FRED / St. Louis Fed';
           indicators[idx]._dataAge = obs[0].date;
+          indicators[idx]._chartDates = obs.slice(0, 30).reverse().map(o => o.date);
           // Signpost-specific YoY series (backtest 2026-07): cpi zones are in YoY %
           // but chartData holds the raw index (~332) - comparing raw against [0..10]
           // zones made CPI a permanently-on signpost. dxy similar unit problem (see
           // FRED_CONFIG note). Both are scored on YoY via _spChartData; cards unchanged.
           const yoyStep = cfg.yoy ? 12 : (SIGNPOST_YOY_ZONES[id] ? 252 : 0);
           if (yoyStep && obs.length > yoyStep + 5) {
-            const yoySeries = [];
+            const yoySeries = [], yoyDates = [];
             for (let k = 0; k < Math.min(obs.length - yoyStep, 30); k++) {
               const prev = obs[k + yoyStep].value;
-              if (prev) yoySeries.push((obs[k].value - prev) / prev * 100);
+              if (prev) { yoySeries.push((obs[k].value - prev) / prev * 100); yoyDates.push(obs[k].date); }
             }
             indicators[idx]._spChartData = yoySeries.reverse();
+            indicators[idx]._spDates = yoyDates.reverse();
           }
           updatedCount++;
         }
@@ -1279,6 +1297,104 @@ function renderRisk() {
     '<strong>Cost of staying out:</strong> holding the S&amp;P every day made ' + pct(W.always_in.cagr, 1) + ' a year with a worst fall of ' + pct(-W.always_in.max_dd) + '; sitting out red days made ' + pct(W.out_on_red.cagr, 1) + ' with a worst fall of ' + pct(-W.out_on_red.max_dd) +
     '. Staying out buys a smoother ride, not more profit (index only, no costs). ' +
     (fw.days ? 'Live test since ' + R.forward_start + ': ' + fw.days + ' sessions graded.' : 'Live test starts ' + R.forward_start + ' — the rule was fixed before then.');
+}
+
+
+// =========================================================
+// CORRECTION WATCH (v2, 24 Nov 2026) - reads correction_watch.json written by
+// scripts/correction_watch.py inside the pulse loop (pulse-data branch, no Pages rebuild).
+// Five daily market flags, round thresholds fixed before testing. Confirms a pullback
+// within days; NOT a sell signal (stress tends to bounce - see the note it renders).
+// Also supplies the same-day VIX close that Part I now scores instead of FRED's late copy.
+// =========================================================
+const CW_URLS = [
+  'https://raw.githubusercontent.com/Moopheus1/US-Market-Shock-Monitor-2/pulse-data/data/correction_watch.json',
+  'data/correction_watch.json'
+];
+let CW = null;
+
+async function loadCWData() {
+  const got = await Promise.all(CW_URLS.map(async u => {
+    try { const r = await fetch(u + '?t=' + Date.now(), { cache: 'no-store' }); return r.ok ? await r.json() : null; }
+    catch (e) { return null; }
+  }));
+  const ok = got.filter(d => d && d._lastUpdated && d.latest);
+  CW = ok.length ? ok.reduce((a, b) => (new Date(b._lastUpdated) > new Date(a._lastUpdated) ? b : a)) : null;
+  renderCW();
+}
+
+// Part I VIX from the same-day close. FRED's VIXCLS arrives 1-2 days late (20 Nov 2026:
+// Part I was scoring 24.6 while VIX had closed at 35.9). Same series, fresher copy.
+function applySameDayVix() {
+  const ind = indicators.find(i => i.id === 'vix');
+  const V = CW && CW.vix_recent;
+  if (!ind || !V || V.length < 6) return;
+  const last = V[V.length - 1];
+  if (ind._dataAge && last.date < ind._dataAge) return; // FRED somehow fresher - keep it
+  const cfg = FRED_CONFIG.vix, vals = V.map(o => o.value);
+  const cur = vals[vals.length - 1], prev = vals[vals.length - 2];
+  const ch = calcChange(cur, prev, cfg.decimals);
+  const zonePos = computeZonePos(cur, cfg.zones, cfg.redUpper);
+  Object.assign(ind, {
+    value: formatValue(cur, cfg), change: ch.text, changeDir: ch.dir, zonePos,
+    severity: zonePos >= 0.66 ? 'high' : zonePos >= 0.33 ? 'med' : 'low',
+    severityLabel: zonePos >= 0.66 ? 'critical' : zonePos >= 0.33 ? 'elevated' : 'stable',
+    date: formatDate(last.date), _dataAge: last.date, chartData: vals, sparkline: vals.slice(-15),
+    _chartDates: V.map(o => o.date), sourceName: 'Yahoo ^VIX daily close (same day)'
+  });
+}
+
+function renderCW() {
+  const body = document.getElementById('cwBody');
+  if (!body) return;
+  if (!CW) { body.textContent = 'unavailable — correction_watch.json not found yet (written by the pulse loop in Actions).'; return; }
+  const C = CW, L = C.latest, LV = C.levels, R = C.rule;
+  const usd = x => '$' + Math.round(x).toLocaleString('en-US');
+  const sgn = x => (x >= 0 ? '+' : '−') + usd(Math.abs(x));
+  const asOf = new Date(L.as_of + 'T12:00:00Z');
+  const ageDays = (Date.now() - asOf.getTime()) / 864e5;
+  document.getElementById('cwAsOf').textContent = '(from the ' + asOf.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' close' + (ageDays > 4 ? ' — STALE' : '') + ')';
+  const colours = ['#15803d', '#b45309', '#b91c1c'];
+  const calls = ['GREEN — no correction signs', 'AMBER — a pullback may be starting', 'RED — a correction is underway'];
+  const g = LV[0], r = LV[2];
+  const lead = [
+    'Nothing (or only one thing) is flashing. ' + pct(g.share) + ' of days since ' + C.test_from.slice(0, 4) + ' looked like this.',
+    'Two of five stress signs are on. Watch closely and keep new positions smaller; this level often fades back to green, but most big falls since ' + C.test_from.slice(0, 4) + ' passed through it first.',
+    'Three or more stress signs are on. This is when to be <strong>smaller</strong> (or out of new trades). It is <strong>not a sell or short signal</strong>: after past red days the S&amp;P\'s next 20 sessions averaged <strong>' + (r.f20_avg >= 0 ? '+' : '') + pct(r.f20_avg, 1) + '</strong> (green days: ' + (g.f20_avg >= 0 ? '+' : '') + pct(g.f20_avg, 1) + ') — stress tends to bounce — but the worst 20-session fall from a red day was ' + pct(r.f20_worst) + '.'][L.level];
+  const F = L.flags, why = [];
+  why.push((F.vix25 ? '🔴 ' : '⚪ ') + 'VIX <strong>' + L.vix.toFixed(1) + '</strong> (trips at ' + R.vix_stress + ')');
+  why.push((F.inverted ? '🔴 ' : '⚪ ') + 'VIX ' + L.vix.toFixed(1) + ' vs 3-month VIX ' + L.vix3m.toFixed(1) + (F.inverted ? ' — <strong>inverted</strong>' : ' — normal'));
+  why.push((F.below50 ? '🔴 ' : '⚪ ') + 'S&amp;P <strong>' + usd(L.close) + '</strong> vs 50-day avg ' + usd(L.ma50) + ' (' + sgn(L.close - L.ma50) + ')');
+  why.push((F.below200 ? '🔴 ' : '⚪ ') + 'vs 200-day avg ' + usd(L.ma200) + ' (' + sgn(L.close - L.ma200) + ')');
+  why.push((F.credit ? '🔴 ' : '⚪ ') + 'credit (HYG vs IEF) ' + (L.credit_chg >= 0 ? '+' : '') + (100 * L.credit_chg).toFixed(1) + '% over 20 sessions (trips at −' + (100 * R.credit_drop).toFixed(0) + '%)');
+  body.innerHTML = '<span class="risk-call" style="color:' + colours[L.level] + '">' + calls[L.level] + '</span> <span class="muted">' + L.n + ' of 5 flags</span><br>' + lead +
+    '<br><span class="muted">' + why.join(' · ') + '</span>';
+  document.getElementById('cwCard').className = 'edge-rule risk l' + L.level;
+
+  const stripCol = ['var(--green)', '#f59e0b', 'var(--red)'];
+  document.getElementById('cwStrip').innerHTML = (C.recent || []).map(x =>
+    '<span style="background:' + stripCol[x.lvl] + '" title="' + x.d + ': ' + ['green', 'amber', 'red'][x.lvl] + ' (' + x.n + '/5), S&P ' + usd(x.close) + '"></span>').join('');
+
+  document.getElementById('cwGrid').innerHTML = LV.map((x, k) =>
+    '<div class="risk-cell l' + k + (k === L.level ? ' on' : '') + '"><b>' + ['🟢 Green', '🟠 Amber', '🔴 Red'][k] + '</b>' +
+    pct(x.share) + ' of days · next day typical move ±' + (100 * x.next_abs).toFixed(2) + '%<br>' +
+    'next 20 sessions: avg ' + (x.f20_avg >= 0 ? '+' : '') + pct(x.f20_avg, 1) + ', fell ' + pct(x.f20_down) + ' of the time<br>' +
+    'worst 20-session fall ' + pct(x.f20_worst) + '</div>').join('');
+
+  const evRows = (C.events || []).map(e => {
+    const fr = e.first_red, fa = e.first_amber;
+    const cell = (f) => f ? usd(f.close) + ' <span class="muted">(' + f.close_date + ', then ' + sgn(e.low_close - f.close) + ' more)</span>' : '<span class="muted">never</span>';
+    return '<tr><td>' + e.peak.slice(0, 7) + (e.open ? ' (open)' : '') + '</td><td>' + usd(e.peak_close) + ' → ' + usd(e.low_close) + ' <span class="muted">(' + pct(e.dd) + ')</span></td><td>' + cell(fa) + '</td><td>' + cell(fr) + '</td></tr>';
+  }).join('');
+  const W = C.what_if, RS = C.red_spells, fw = C.forward;
+  document.getElementById('cwNote').innerHTML =
+    'Flags (fixed before testing, not tuned): VIX ' + R.vix_stress + '+, VIX above 3-month VIX, S&amp;P below its 50-day and 200-day averages, HYG/IEF down ' + (100 * R.credit_drop) + '%+ in 20 sessions. Green 0–1, amber 2, red 3+. Read after each close for the next session. ' +
+    'Tested on ' + C.test_days.toLocaleString() + ' sessions since ' + C.test_from.slice(0, 4) + '. Every S&amp;P fall of 8%+ in that time:' +
+    '<table class="cw-table"><tr><th>fall</th><th>peak → low</th><th>first amber at</th><th>first red at</th></tr>' + evRows + '</table>' +
+    '<br><strong>What it is not:</strong> it confirms a correction, it does not see one coming — fast shocks (Feb 2018, Aug 2024) only turned red near the bottom, and Sep 2020 never did. ' +
+    RS.n + ' red spells, typically ' + RS.median_len + ' sessions long; ' + RS.no_further_3pct + ' of them were not followed by a further 3% drop within 30 sessions. ' +
+    '<strong>Cost of staying out:</strong> holding the S&amp;P every day made ' + pct(W.always_in.cagr, 1) + ' a year (worst fall ' + pct(-W.always_in.max_dd) + '); sitting out red days made ' + pct(W.out_on_red.cagr, 1) + ' (worst fall ' + pct(-W.out_on_red.max_dd) + '). A smoother ride, not more profit (index only, no costs). ' +
+    (fw.days ? 'Live test since ' + C.forward_start + ': ' + fw.days + ' sessions.' : 'Live test starts ' + C.forward_start + ' — the rule was frozen before then.');
 }
 
 async function loadRiskData() {
@@ -2261,21 +2377,41 @@ function computeSignposts() {
     else if (levelTriggered) reason = 'level';
     else if (trendTriggered) reason = 'trend';
 
-    results.push({ id: ind.id, title: ind.title, triggered, reason, trendDelta });
+    // How long has the LEVEL trigger been on? Walk back while the series stayed in its red zone.
+    let onSince = null, sinceCapped = false;
+    if (levelTriggered && spSeries && spSeries.length) {
+      const dts = usingSp ? ind._spDates : ind._chartDates;
+      if (dts && dts.length === spSeries.length) {
+        let k = spSeries.length - 1;
+        while (k > 0 && computeZonePos(spVal(spSeries[k - 1]), zones, cfg.redUpper) >= 0.66) k--;
+        onSince = dts[k]; sinceCapped = (k === 0);
+      }
+    }
+    const chronic = !!(onSince && (Date.now() - new Date(onSince + 'T00:00:00Z').getTime()) / 864e5 >= 90);
+    results.push({ id: ind.id, title: ind.title, triggered, reason, trendDelta, onSince, sinceCapped, chronic });
   });
   return results;
 }
 
 function renderSignpostList(signposts) {
   const el = document.getElementById('signpostList');
+  const noteEl = document.getElementById('signpostNote');
   const triggered = signposts.filter(s => s.triggered);
   if (triggered.length === 0) {
     el.innerHTML = '<div class="signpost-empty">no signposts currently triggered</div>';
+    if (noteEl) noteEl.textContent = '';
     return;
   }
+  const monYr = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const chronic = triggered.filter(s => s.chronic && s.reason === 'level');
+  if (noteEl) noteEl.innerHTML = chronic.length
+    ? '⏳ ' + chronic.length + ' of these ' + (chronic.length === 1 ? 'has' : 'have') + ' been on for 3+ months (' + chronic.map(s => s.title).join(', ') +
+      '). They describe the backdrop, not a new crack — the count can\'t drop below ' + chronic.length + ' until they clear. New stress shows up as anything <em>above</em> that floor, or in the correction watch below.'
+    : '';
   el.innerHTML = triggered.map(s => {
     const icon = s.reason === 'both' ? '●▲' : s.reason === 'level' ? '●' : s.reason === 'collapse' ? '▼' : '▲';
-    const label = s.reason === 'both' ? 'level + trend' : s.reason === 'collapse' ? 'flight-to-safety' : s.reason;
+    let label = s.reason === 'both' ? 'level + trend' : s.reason === 'collapse' ? 'flight-to-safety' : s.reason;
+    if (s.chronic && s.reason === 'level') label += ', on ' + (s.sinceCapped ? 'since at least ' : 'since ') + monYr(s.onSince) + ' reading';
     return '<span class="signpost-chip ' + s.reason + '" onclick="scrollToIndicator(\'' + s.id + '\')">' + icon + ' ' + s.title + ' <span style="opacity:0.7">(' + label + ')</span></span>';
   }).join('');
 }
@@ -2342,11 +2478,13 @@ async function manualRefresh() {
       loadEdgeData(),
       loadSizeData(),
       loadRiskData(),
+      loadCWData(),
       loadNAAIMData(),
       loadGoldData(),
       loadBTCData(),
       fetchRealtime()
     ]);
+    applySameDayVix(); // after both FRED and correction-watch files have loaded
     renderCards();
     calcComposite();
   } catch (e) {
@@ -2396,6 +2534,8 @@ function renderPageLoadedTimestamp() {
 (async function init() {
   setPageLoadedTimestamp();
   await loadFREDData();
+  await loadCWData();
+  applySameDayVix();
   await loadBreadthData();
   await loadEdgeData();
   await loadSizeData();

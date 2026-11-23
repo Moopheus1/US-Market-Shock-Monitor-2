@@ -11,6 +11,7 @@ name: Fetch Yahoo pre-market pulse (5 min)
 # every 5 min meant ~12 GitHub Pages rebuilds an hour, over Pages' soft limit of 10.
 # The page reads it from raw.githubusercontent.com. The branch is kept to one commit
 # (amend + force push), so it never grows.
+# The loop also refreshes data/correction_watch.json (scripts/correction_watch.py) hourly.
 
 on:
   schedule:
@@ -47,13 +48,19 @@ jobs:
             deadline=$((now + 1))
           fi
 
+          round=0
           while :; do
+            mkdir -p ../pd/data
+            # Correction watch (daily closes): first round, then hourly. Completed sessions only.
+            if [ $((round % 12)) -eq 0 ]; then
+              python3 scripts/correction_watch.py && cp data/correction_watch.json ../pd/data/ || echo "correction_watch.py failed this round"
+            fi
+            round=$((round + 1))
             if python3 scripts/pulse.py; then
-              mkdir -p ../pd/data
               cp data/pulse.json ../pd/data/pulse.json
               (
                 cd ../pd
-                git add data/pulse.json
+                git add data/pulse.json data/correction_watch.json 2>/dev/null || git add data/pulse.json
                 if ! git diff --cached --quiet; then
                   git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
                   git push -q --force origin pulse-data || echo "push failed this round"

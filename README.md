@@ -48,6 +48,13 @@ The **overnight alarm** is a live overlay: if S&P futures are already ±1% from 
 
 Sessions from **2026-10-06** onward are the live out-of-sample test.
 
+## Correction watch (Part I companion, added 24 Nov 2026)
+Part I's signposts are mostly monthly macro data; in the 6 Oct-20 Nov 2026 slide (S&P $7,819 -> $6,910) the count never passed 5/14. `scripts/correction_watch.py` (run hourly inside the pulse loop, written to the `pulse-data` branch) adds a fast light from five daily flags, round thresholds fixed before testing: VIX 25+, VIX above VIX3M, S&P below its 50-day and 200-day averages, HYG/IEF down 2%+ over 20 sessions. Green 0-1, amber 2, red 3+.
+
+Test 2012-2026 (3,744 sessions): red early enough to matter in 7 of 10 S&P falls of 8%+ (late in Feb 2018 and Aug 2024, never in Sep 2020). This autumn: amber from the 22 Oct close ($7,663), red from the 5 Nov close ($7,354). Not a sell signal: after red days the next 20 sessions averaged +2.6% vs +0.7% after green; 37 of 79 red spells saw no further 3% drop. Sitting out red: 9.3%/yr, worst fall 27%, vs holding 12.1%/yr, worst fall 34%. Live test from 2026-11-24.
+
+Part I changes the same day: VIX scored from the same-day Yahoo close (FRED's copy lagged 1-2 days). Making chronic inputs (consumer, CPI, oil) trend-only was tested and rejected: it halved the calm-day reading but removed the model's only early 40%+ call (2022). Inputs stuck on for 3+ months are labelled instead.
+
 ## Options-flow forward test
 A scheduled task logs big ($100k+) SPY/QQQ options flow from the Rallies connector into `data/flow_log.json` twice each weekday (8:40am ET pre-open, 10:35am ET after the first hour). `edge_tracker.py` grades it after the close. No flow history is available for free, so this can only be tested going forward; treat results as noise until ~50 graded days.
 
