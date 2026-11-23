@@ -1,0 +1,34 @@
+name: One-off backtest data pull (temporary branch)
+on:
+  push:
+    branches: [bt-data]
+jobs:
+  pull:
+    if: "!contains(github.event.head_commit.message, '[data]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'P'
+          import json, urllib.request, datetime as dt, time
+          H={"User-Agent":"Mozilla/5.0"}
+          for t,name in [("%5EGSPC","GSPC"),("HYG","HYG"),("IEF","IEF")]:
+              for a in range(3):
+                  try:
+                      r=json.load(urllib.request.urlopen(urllib.request.Request(f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?interval=1d&range=20y",headers=H),timeout=60));break
+                  except Exception as e: print(e); time.sleep(10)
+              res=r["chart"]["result"][0]; ts=res["timestamp"]; q=res["indicators"]["quote"][0]
+              adj=res["indicators"].get("adjclose",[{}])[0].get("adjclose")
+              with open(f"{name}.csv","w") as f:
+                  f.write("date,close,adjclose\n")
+                  for i,t0 in enumerate(ts):
+                      c=q["close"][i]
+                      if c is None: continue
+                      d=(dt.datetime.utcfromtimestamp(t0)-dt.timedelta(hours=5)).date()
+                      f.write(f"{d},{c},{adj[i] if adj else c}\n")
+              print(name, len(ts))
+          P
+          git config user.name github-actions[bot]; git config user.email github-actions[bot]@users.noreply.github.com
+          git add *.csv && git commit -m "[data] yahoo history" && git push
