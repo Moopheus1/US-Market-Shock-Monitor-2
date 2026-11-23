@@ -1402,7 +1402,7 @@ function renderCW() {
     '<br><br><strong>Which way to use it</strong> — $10,000 in the S&amp;P from ' + C.test_from.slice(0, 4) + ' to ' + C.test_to.slice(0, 4) + ' (index only, no costs or tax):' +
     '<table class="cw-table"><tr><th>rule</th><th>ends at</th><th>per year</th><th>worst fall</th><th>time in market</th></tr>' +
     [['Just hold', W.always_in], ['<strong>Half size on red, full otherwise (suggested)</strong>', W.half_on_red], ['Out completely on red', W.out_on_red], ['Sell on amber, buy back on red', W.sell_amber_buy_red]]
-      .filter(x => x[1]).map(x => '<tr><td>' + x[0] + '</td><td>' + usd(x[1].end_10k) + '</td><td>' + pct(x[1].cagr, 1) + '</td><td>' + pct(x[1].max_dd, 1) + '</td><td>' + pct(x[1].time_in) + '</td></tr>').join('') +
+      .filter(x => x[1] && x[1].end_10k != null).map(x => '<tr><td>' + x[0] + '</td><td>' + usd(x[1].end_10k) + '</td><td>' + pct(x[1].cagr, 1) + '</td><td>' + pct(x[1].max_dd, 1) + '</td><td>' + pct(x[1].time_in) + '</td></tr>').join('') +
     '</table><span class="muted">Half size on red trades a little return for a much smaller worst fall. Honest caveat: the five flags were fixed before testing, but the half-size rule was picked on 24 Nov 2026 after seeing these results — treat it as a sensible sizing rule, not a proven edge. Selling on amber is the worst option: amber usually fades, and red often never comes to buy back.</span><br><br>' +
     (fw.days ? 'Live test since ' + C.forward_start + ': ' + fw.days + ' sessions.' : 'Live test starts ' + C.forward_start + ' — the rule was frozen before then.');
 }
