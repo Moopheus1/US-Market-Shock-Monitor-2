@@ -162,7 +162,7 @@ def summarize(rows):
 def grade_flow(rows):
     """Grade the options-flow forward test (data/flow_log.json).
 
-    preopen rows  (logged ~8:40am ET): previous session's big-money SPY flow.
+    preopen rows  (logged ~6:05am ET since 24 Nov 2026, ~8:40am before): previous session's big-money SPY flow.
         Graded against that day's colour (SPY close vs prior close) and against
         the move AFTER 9am ET (ES 9am -> 4pm), i.e. what you could still trade.
     firsthour rows (logged ~10:35am ET): the first hour's flow.
@@ -194,6 +194,11 @@ def grade_flow(rows):
         if r.get("ticker") != "SPY" or r.get("net_ex0dte") is None:
             continue
         target = dt.datetime.fromisoformat(r["logged_at_utc"].replace("Z", "+00:00")).astimezone(NY).date().isoformat()
+        # 24 Nov 2026: Rallies switches to the NEW day as soon as the first extended-hours
+        # print lands (~7:30am ET), so a late pre-open run can capture a handful of today's
+        # trades instead of the previous session. Such a row is not the signal being tested.
+        if r["run"] == "preopen" and (r.get("data_date") or "") >= target:
+            continue
         sig, sig_all = r["net_ex0dte"] > 0, (r.get("net") or 0) > 0
         row = by_date.get(target)
         item = {"session": target, "run": r["run"], "net_ex0dte": r["net_ex0dte"], "truncated": r.get("truncated")}

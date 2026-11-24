@@ -56,7 +56,9 @@ Test 2012-2026 (3,744 sessions): red early enough to matter in 7 of 10 S&P falls
 Part I changes the same day: VIX scored from the same-day Yahoo close (FRED's copy lagged 1-2 days). Making chronic inputs (consumer, CPI, oil) trend-only was tested and rejected: it halved the calm-day reading but removed the model's only early 40%+ call (2022). Inputs stuck on for 3+ months are labelled instead.
 
 ## Options-flow forward test
-A scheduled task logs big ($100k+) SPY/QQQ options flow from the Rallies connector into `data/flow_log.json` twice each weekday (8:40am ET pre-open, 10:35am ET after the first hour). `edge_tracker.py` grades it after the close. No flow history is available for free, so this can only be tested going forward; treat results as noise until ~50 graded days.
+A scheduled task logs big ($100k+) SPY/QQQ options flow from the Rallies connector into `data/flow_log.json` twice each weekday (6:05am ET pre-open, 10:35am ET after the first hour). `edge_tracker.py` grades it after the close.
+
+24 Nov 2026: logging had silently stopped after 23 Oct. Both logger tasks were tied to the home PC, so runs ended in ~3 seconds without logging whenever it was not available; they were replaced by cloud-only tasks. The pre-open run moved from ~8:40am to 6:05am ET because Rallies now switches to the new day at the first extended-hours print (~7:30am ET); pre-open rows holding same-day data are skipped by the grader. No flow history is available for free, so this can only be tested going forward; treat results as noise until ~50 graded days.
 
 ## Changes vs v1
 1. **Score = futures, VIX, yield, dollar, crude only.** The MOO imbalance entry box is removed entirely; the buy/sell volume proxy is shown as context, not scored. Neither exists at the 8pm SGT read, neither was tested, and including them made the score mean different things at different times of day.

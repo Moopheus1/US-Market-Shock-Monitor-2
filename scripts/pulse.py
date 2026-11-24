@@ -44,6 +44,45 @@ for ticker, key in SYMBOLS.items():
         failures.append(ticker)
         print(f"FAIL {ticker}: {e}")
 
+# Overnight 10Y estimate (added 24 Nov 2026, display only - NOT scored).
+# Yahoo's ^TNX does not trade before 08:20 ET, so before then the page had no 10Y number.
+# The 10Y T-note future (ZN=F) trades ~23h a day. Regression of daily ^TNX change (bp)
+# on ZN=F % change, Nov 2024-Nov 2026 (499 days): -15.3 bp per +1% in ZN, corr -0.98,
+# residual s.d. ~1 bp. Estimate = last ^TNX close + (-15.3 x ZN % change since its last close).
+# The bias score still skips the 10Y before 08:20 ET, exactly as the Edge Tracker backtest does.
+BP_PER_PCT_ZN = -15.3
+try:
+    import zoneinfo
+    ny_today = datetime.datetime.now(zoneinfo.ZoneInfo("America/New_York")).date()
+
+    def daily(ticker):
+        req = urllib.request.Request("https://query1.finance.yahoo.com/v8/finance/chart/" + ticker + "?interval=1d&range=10d", headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            res = json.load(r)["chart"]["result"][0]
+        closes = res["indicators"]["quote"][0]["close"]
+        bars = [(datetime.datetime.fromtimestamp(t, zoneinfo.ZoneInfo("America/New_York")).date(), c)
+                for t, c in zip(res["timestamp"], closes) if c is not None]
+        return res["meta"], bars
+
+    zmeta, zbars = daily("ZN=F")
+    tmeta, tbars = daily("^TNX")
+    zn_now = zmeta.get("regularMarketPrice")
+    zn_prev = [c for d, c in zbars if d < ny_today][-1]       # last completed session's close
+    tnx_close = [c for d, c in tbars if d < ny_today][-1]     # last completed 10Y close
+    zn_pct = (zn_now - zn_prev) / zn_prev * 100
+    if abs(zn_pct) > 3:
+        raise ValueError(f"implausible ZN move {zn_pct:.2f}%")
+    est = tnx_close + BP_PER_PCT_ZN * zn_pct / 100
+    out["tnx_est"] = {
+        "ticker": "ZN=F", "zn_current": zn_now, "zn_previous": zn_prev,
+        "zn_time_utc": datetime.datetime.fromtimestamp(zmeta.get("regularMarketTime", 0), datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "tnx_close": round(tnx_close, 3), "estimate": round(est, 3),
+        "change_bp": round(BP_PER_PCT_ZN * zn_pct, 1), "bp_per_pct": BP_PER_PCT_ZN,
+    }
+    print(f"OK  10Y estimate {est:.3f}% ({BP_PER_PCT_ZN * zn_pct:+.1f} bp from ZN {zn_prev} -> {zn_now})")
+except Exception as e:
+    print(f"WARN 10Y estimate unavailable: {e}")
+
 out["_lastUpdated"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 out["_failedSymbols"] = failures
 
@@ -51,7 +90,7 @@ os.makedirs("data", exist_ok=True)
 with open("data/pulse.json", "w") as f:
     json.dump(out, f, indent=2)
 
-print(f"\n{len(out) - 2}/{len(SYMBOLS)} symbols fetched OK. Failed: {failures}")
+print(f"\n{len(SYMBOLS) - len(failures)}/{len(SYMBOLS)} symbols fetched OK. Failed: {failures}")
 
 # Fail the job loudly if EVERYTHING failed - a partial-failure commit is fine
 # (stale-but-real data beats nothing), but a full failure means Yahoo blocked us
