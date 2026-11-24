@@ -13,7 +13,7 @@ import csv, datetime, io, json, os, sys, urllib.request, zoneinfo
 NY = zoneinfo.ZoneInfo("America/New_York")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; MarketShockMonitor/1.0)"}
 INDEXES = ["SPY", "QQQ"]
-STOCKS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "MU", "PLTR",
+STOCKS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD", "MU", "PLTR",
           "INTC", "TSM", "SNDK", "WDC", "STX", "SMH"]
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -145,7 +145,8 @@ for t in INDEXES + STOCKS:
         out["failed"].append(t); print(f"FAIL {t}: {e}")
 
 # Weights and odds change slowly: refresh once a day, otherwise carry the last good ones.
-fresh = prev.get("_weightsDate") == NOW.date().isoformat()
+fresh = (prev.get("_weightsDate") == NOW.date().isoformat()
+         and set(STOCKS) <= set((((prev.get("weights") or {}).get("SPY")) or {}).get("w", {})))  # re-fetch when a stock is added
 if fresh:
     for k in ("weights", "odds", "_weightsDate"):
         if k in prev:
