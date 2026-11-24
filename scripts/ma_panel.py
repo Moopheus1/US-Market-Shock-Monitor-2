@@ -17,6 +17,44 @@ STOCKS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD"
           "INTC", "TSM", "SNDK", "WDC", "STX", "SMH"]
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
+# His downside targets from the video of Mon 23 Nov 2026 ("QQQ 700 WITH A NVDA RALLY?!").
+# These are where he says the NEXT LEG DOWN goes - not buy prices. His buy signal is the
+# 10/20 SMA bullish cross after prices stop making lower lows. Logged as a forward test.
+KING_SINCE = "2026-11-23"
+KING = {
+    "QQQ":  {"kind": "price", "value": 590, "said": "bounce toward $666, then reject down toward $590 ($570-600)"},
+    "AAPL": {"kind": "sma", "value": 100, "said": "break its 20 and 50 SMAs, drop to the 100-day SMA"},
+    "MSFT": {"kind": "sma", "value": 200, "said": "break its 100 SMA, drop to the 200-day SMA"},
+    "AMZN": {"kind": "sma", "value": 200, "said": "break down through its 200-day SMA"},
+    "MU":   {"kind": "price", "value": 380, "said": "sharp leg down toward $380"},
+    "INTC": {"kind": "price", "value": 42, "said": "reject back down toward $42"},
+    "NVDA": {"kind": "none", "said": "slip back under its 10 SMA for another leg lower (no price given)"},
+    "GOOGL": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
+    "PLTR": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
+    "TSLA": {"kind": "none", "said": "break all its SMAs, another leg down (no price given)"},
+    "AVGO": {"kind": "none", "said": "keep selling off with the market (no price given)"},
+}
+
+
+def king_status(t, B):
+    k = KING.get(t)
+    if not k:
+        return None
+    out = {"said": k["said"], "kind": k["kind"], "target": None, "reached_on": None}
+    if k["kind"] == "none":
+        return out
+    c = [b[3] for b in B]
+    for j in range(len(B)):
+        if B[j][0] < KING_SINCE:
+            continue
+        lvl = k["value"] if k["kind"] == "price" else (sum(c[j - k["value"] + 1:j + 1]) / k["value"] if j >= k["value"] - 1 else None)
+        if lvl is not None and B[j][2] <= lvl and out["reached_on"] is None:
+            out["reached_on"] = B[j][0]
+    i = len(B) - 1
+    out["target"] = k["value"] if k["kind"] == "price" else round(sum(c[i - k["value"] + 1:i + 1]) / k["value"], 2)
+    out["label"] = ("$%d" % k["value"]) if k["kind"] == "price" else "%d-day SMA" % k["value"]
+    return out
+
 
 def get(url, timeout=20):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
@@ -126,7 +164,7 @@ if len(sys.argv) > 1 and sys.argv[1] and os.path.exists(sys.argv[1]):
     except Exception:
         prev = {}
 
-out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": []}
+out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": [], "king_since": KING_SINCE}
 for t in INDEXES + STOCKS:
     try:
         B, meta = bars(t)
@@ -138,7 +176,7 @@ for t in INDEXES + STOCKS:
         out["rows"].append({"ticker": t, "price": c[i], "bar_date": B[i][0], "high": h[i], "low": l[i],
                             "sma": {str(k): (round(v, 2) if v else None) for k, v in s.items()},
                             "setup_dates": recent, "cross_up_date": cross_up,
-                            "low20": min(l[i - 19:i + 1]),
+                            "low20": min(l[i - 19:i + 1]), "king": king_status(t, B),
                             "is_etf": t in ("SPY", "QQQ", "SMH")})
         print(f"OK  {t} {c[i]:.2f}")
     except Exception as e:
