@@ -38,7 +38,11 @@ for ticker, key in SYMBOLS.items():
         cap = 150 if ticker == "^VIX" else 12
         if current is None or previous is None or previous == 0 or abs((current - previous) / previous) * 100 > cap: raise ValueError(f"missing/implausible price (current={current}, previous={previous})")
 
-        out[key] = {"ticker": ticker, "current": current, "previous": previous}
+        mt = meta.get("regularMarketTime")
+        out[key] = {"ticker": ticker, "current": current, "previous": previous,
+                    # time of the last actual trade/quote - the page leaves a symbol out of the
+                    # score when this is 2h+ old, the same rule edge_tracker.py's backtest uses
+                    "market_time_utc": datetime.datetime.fromtimestamp(mt, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if mt else None}
         print(f"OK  {ticker} -> current={current} previous={previous}")
     except Exception as e:
         failures.append(ticker)

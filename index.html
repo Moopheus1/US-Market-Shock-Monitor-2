@@ -1796,6 +1796,7 @@ async function fetchRealtime() {
   const nyNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const tnxNotYet = (nyNow.getHours() * 60 + nyNow.getMinutes()) < (8 * 60 + 20);
   const results = [];
+  const stalePulseSyms = [];
 
   if (pulseData) {
     // v2: ^TNX has no data before 08:20 ET. Before then Yahoo's "current" is yesterday's
@@ -1806,6 +1807,10 @@ async function fetchRealtime() {
       const key = YAHOO_KEY_MAP[s.ticker];
       const d = pulseData[key];
       if (!d || d.current == null || d.previous == null) return;
+      // 24 Nov 2026: no trade for 2h+ = not scored, the same rule the Edge Tracker backtest
+      // applies. Caught on ^TNX: at 8:20am ET Yahoo still had no 10Y print for the day, so the
+      // clock guard alone let Monday's +0.12% through as if it were Tuesday's overnight move.
+      if (d.market_time_utc && hoursAgo(d.market_time_utc) > 2) { stalePulseSyms.push({ s, d }); return; }
       const change = ((d.current - d.previous) / d.previous) * 100;
       results.push({
         name: s.name, ticker: s.ticker, current: d.current, previous: d.previous, change,
@@ -1825,7 +1830,18 @@ async function fetchRealtime() {
   RISK_ES_CHANGE = (esLive && !pulseStale) ? esLive.change : null;
   renderRisk();
   updatePulseUI(results, results.length < PREMARKET_SYMBOLS.length, yahooLastUpdated);
-  if (pulseData && tnxNotYet) {
+  // Symbols left out for having no trade in 2h+ (other than the 10Y, handled below).
+  stalePulseSyms.filter(x => x.s.ticker !== '^TNX').forEach(({ s, d }) => {
+    const el = document.getElementById(s.id);
+    if (!el) return;
+    el.classList.remove('error');
+    el.querySelector('.pulse-value').textContent = d.current.toFixed(s.decimals);
+    const ch = el.querySelector('.pulse-change');
+    ch.textContent = 'no trade since ' + new Date(d.market_time_utc).toLocaleString('en-SG', { timeZone: 'Asia/Singapore', weekday: 'short', hour: 'numeric', minute: '2-digit' }) + ' SGT · not scored';
+    ch.className = 'pulse-change change-neutral';
+  });
+  const tnxStale = stalePulseSyms.find(x => x.s.ticker === '^TNX');
+  if (pulseData && (tnxNotYet || tnxStale)) {
     // 24 Nov 2026: before 08:20 ET show an ESTIMATE from the 10Y T-note future (ZN=F),
     // computed in scripts/pulse.py (-15.3 bp per +1% ZN, corr -0.98 over 2 years).
     // Display only - still left out of the score, matching the Edge Tracker backtest.
@@ -1836,12 +1852,12 @@ async function fetchRealtime() {
         el.classList.remove('error');
         el.querySelector('.pulse-value').textContent = '≈' + est.estimate.toFixed(2) + '%';
         const ch = el.querySelector('.pulse-change');
-        ch.textContent = (est.change_bp >= 0 ? '+' : '') + est.change_bp.toFixed(1) + 'bp est. (T-note futures) · not scored before 8:20am ET';
+        ch.textContent = (est.change_bp >= 0 ? '+' : '') + est.change_bp.toFixed(1) + 'bp est. (T-note futures) · not scored until the 10Y quote trades';
         ch.className = 'pulse-change change-neutral';
         ch.title = 'Estimated from the 10Y T-note future (ZN=F ' + est.zn_previous + ' -> ' + est.zn_current +
           ') on top of the last 10Y close ' + est.tnx_close + '%. Typical error about 1bp. The real ^TNX quote starts at 8:20am ET.';
       } else {
-        el.querySelector('.pulse-change').textContent = 'not scored before 8:20am ET';
+        el.querySelector('.pulse-change').textContent = tnxNotYet ? 'not scored before 8:20am ET' : 'no 10Y quote yet today · not scored';
       }
     }
   }
