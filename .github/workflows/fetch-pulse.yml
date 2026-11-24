@@ -11,7 +11,8 @@ name: Fetch Yahoo pre-market pulse (5 min)
 # every 5 min meant ~12 GitHub Pages rebuilds an hour, over Pages' soft limit of 10.
 # The page reads it from raw.githubusercontent.com. The branch is kept to one commit
 # (amend + force push), so it never grows.
-# The loop also refreshes data/correction_watch.json (scripts/correction_watch.py) hourly.
+# The loop also refreshes data/correction_watch.json (scripts/correction_watch.py) hourly,
+# and data/breadth.json (scripts/breadth.py) every round in the first 4 trading hours.
 
 on:
   schedule:
@@ -56,11 +57,17 @@ jobs:
               python3 scripts/correction_watch.py && cp data/correction_watch.json ../pd/data/ || echo "correction_watch.py failed this round"
             fi
             round=$((round + 1))
+            # Buy/sell volume proxy (24 Nov 2026, moved from v1's throttled */15 cron):
+            # every round from 9:31am to 1:45pm New York time on weekdays.
+            nyhm=$(TZ=America/New_York date +%H%M)
+            if [ "$dow" -le 5 ] && [ "$nyhm" -ge 0931 ] && [ "$nyhm" -le 1345 ]; then
+              python3 scripts/breadth.py && cp data/breadth.json ../pd/data/ || echo "breadth.py failed this round"
+            fi
             if python3 scripts/pulse.py; then
               cp data/pulse.json ../pd/data/pulse.json
               (
                 cd ../pd
-                git add data/pulse.json data/correction_watch.json 2>/dev/null || git add data/pulse.json
+                git add data/pulse.json; git add data/correction_watch.json data/breadth.json 2>/dev/null || true
                 if ! git diff --cached --quiet; then
                   git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
                   git push -q --force origin pulse-data || echo "push failed this round"

@@ -1706,13 +1706,14 @@ async function loadBTCData() {
 
 async function loadBreadthData() {
   const statusEl = document.getElementById('breadthStatus');
-  try {
-    const res = await fetch(DATA_BASE + 'breadth.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('not found');
-    breadthData = await res.json();
-  } catch (e) {
-    breadthData = null;
-  }
+  // 24 Nov 2026: v2 computes this itself in the 5-min pulse loop (pulse-data branch).
+  // v1's copy (throttled */15 cron) is kept as a fallback; the newer file wins.
+  const got = await Promise.all([
+    'https://raw.githubusercontent.com/Moopheus1/US-Market-Shock-Monitor-2/pulse-data/data/breadth.json',
+    DATA_BASE + 'breadth.json'
+  ].map(u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)));
+  const okB = got.filter(d => d && d.symbols && d._lastUpdated);
+  breadthData = okB.length ? okB.reduce((a, b) => (new Date(b._lastUpdated) > new Date(a._lastUpdated) ? b : a)) : null;
 
   if (!breadthData || !breadthData.symbols) {
     statusEl.textContent = 'unavailable — data/breadth.json missing. Check the "Fetch Buy/Sell Volume Proxy" workflow in Actions.';
