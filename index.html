@@ -1823,7 +1823,7 @@ async function loadMAPanel() {
     const wS = r.is_etf ? '—' : (ws[r.ticker] != null ? ws[r.ticker].toFixed(2) + '%' : 'not held');
     const wQ = r.is_etf ? '—' : (wq[r.ticker] != null ? wq[r.ticker].toFixed(2) + '%' + (r.ticker === 'GOOGL' && qPartial ? '*' : '') : (qPartial ? 'n/a' : 'not held'));
     const setup = r.setup_dates && r.setup_dates.length ? '<span class="ma-pill setup">ON ' + r.setup_dates[r.setup_dates.length - 1].slice(5) + '</span>'
-      : (r.cross_up_date ? '<span class="ma-pill bull">10 crossed up ' + r.cross_up_date.slice(5) + '</span>' : '');
+      : (r.cross_up_date && !bear ? '<span class="ma-pill bull">10 crossed up ' + r.cross_up_date.slice(5) + '</span>' : '');  // only while the cross still holds
     h += '<tr class="' + (r.is_etf && r.ticker !== 'SMH' ? 'ma-idx' : '') + '"><td>' + r.ticker + '</td><td>' + wS + '</td><td>' + wQ + '</td><td>' + usd(r.price) + '</td>' +
       cell(r.price, s['10']) + cell(r.price, s['20']) + cell(r.price, s['50']) + cell(r.price, s['100']) + cell(r.price, s['200']) +
       '<td><span class="ma-pill ' + (bear ? 'bear' : 'bull') + '">' + (bear ? '10 under 20' : '10 over 20') + '</span></td>' +
