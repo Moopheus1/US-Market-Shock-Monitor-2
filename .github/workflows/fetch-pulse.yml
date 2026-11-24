@@ -63,11 +63,16 @@ jobs:
             if [ "$dow" -le 5 ] && [ "$nyhm" -ge 0931 ] && [ "$nyhm" -le 1345 ]; then
               python3 scripts/breadth.py && cp data/breadth.json ../pd/data/ || echo "breadth.py failed this round"
             fi
+            # Gold + Bitcoin reference cards (24 Nov 2026, v1's twice-daily cron kept getting skipped): every 15 min.
+            if [ $(( (round - 1) % 3 )) -eq 0 ]; then
+              python3 scripts/refpoints.py || echo "refpoints.py failed this round"
+              for f in gold bitcoin; do [ -f "data/$f.json" ] && cp "data/$f.json" ../pd/data/; done
+            fi
             if python3 scripts/pulse.py; then
               cp data/pulse.json ../pd/data/pulse.json
               (
                 cd ../pd
-                git add data/pulse.json; git add data/correction_watch.json data/breadth.json 2>/dev/null || true
+                git add data/pulse.json; for f in correction_watch breadth gold bitcoin; do [ -f "data/$f.json" ] && git add "data/$f.json"; done; true
                 if ! git diff --cached --quiet; then
                   git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
                   git push -q --force origin pulse-data || echo "push failed this round"

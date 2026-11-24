@@ -1637,13 +1637,21 @@ async function loadNAAIMData() {
 // NAAIM SECTION END
 
 // GOLD SECTION START — informational only, not scored. See fetch-gold.yml for removal.
+// 24 Nov 2026: v2 publishes its own copy of some reference files to the pulse-data branch
+// (refreshed inside the 5-min pulse loop); v1's copy stays as a fallback. Newer file wins.
+async function loadNewestRef(file) {
+  const got = await Promise.all([
+    'https://raw.githubusercontent.com/Moopheus1/US-Market-Shock-Monitor-2/pulse-data/data/' + file,
+    DATA_BASE + file
+  ].map(u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)));
+  const ok = got.filter(d => d && !d._fetchFailed && d._lastUpdated);
+  return ok.length ? ok.reduce((a, b) => (new Date(b._lastUpdated) > new Date(a._lastUpdated) ? b : a)) : (got[1] || got[0]);
+}
+
 async function loadGoldData() {
   const statusEl = document.getElementById('goldStatus');
   let data = null;
-  try {
-    const res = await fetch(DATA_BASE + 'gold.json', { cache: 'no-store' });
-    if (res.ok) data = await res.json();
-  } catch (e) { data = null; }
+  data = await loadNewestRef('gold.json');
 
   if (!data || data._fetchFailed || data.price === undefined) {
     statusEl.textContent = 'unavailable — data/gold.json missing or fetch failed';
@@ -1674,10 +1682,7 @@ async function loadGoldData() {
 async function loadBTCData() {
   const statusEl = document.getElementById('btcStatus');
   let data = null;
-  try {
-    const res = await fetch(DATA_BASE + 'bitcoin.json', { cache: 'no-store' });
-    if (res.ok) data = await res.json();
-  } catch (e) { data = null; }
+  data = await loadNewestRef('bitcoin.json');
 
   if (!data || data._fetchFailed || data.price === undefined) {
     statusEl.textContent = 'unavailable — data/bitcoin.json missing or fetch failed';
