@@ -70,9 +70,10 @@ jobs:
             fi
             if python3 scripts/pulse.py; then
               cp data/pulse.json ../pd/data/pulse.json
+              python3 scripts/snap8pm.py ../pd/data/pulse_8pm.json || echo "snap8pm.py failed this round"
               (
                 cd ../pd
-                git add data/pulse.json; for f in correction_watch breadth gold bitcoin; do [ -f "data/$f.json" ] && git add "data/$f.json"; done; true
+                git add data/pulse.json; for f in correction_watch breadth gold bitcoin pulse_8pm; do [ -f "data/$f.json" ] && git add "data/$f.json"; done; true
                 if ! git diff --cached --quiet; then
                   git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
                   git push -q --force origin pulse-data || echo "push failed this round"

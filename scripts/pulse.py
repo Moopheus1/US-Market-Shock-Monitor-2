@@ -87,6 +87,29 @@ try:
 except Exception as e:
     print(f"WARN 10Y estimate unavailable: {e}")
 
+# Live market move (24 Nov 2026): SPY vs yesterday's close, plus SPY at 10:30am ET - the
+# page's tested "one hour after the open" check (>0.5% either way: ~9 in 10 closed that way).
+# Display only, not part of the score.
+try:
+    import zoneinfo
+    NYZ = zoneinfo.ZoneInfo("America/New_York")
+    req = urllib.request.Request("https://query1.finance.yahoo.com/v8/finance/chart/SPY?interval=1m&range=1d", headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=10) as r:
+        res = json.load(r)["chart"]["result"][0]
+    m = res["meta"]
+    bars = [(datetime.datetime.fromtimestamp(t, NYZ), c) for t, c in zip(res.get("timestamp") or [], res["indicators"]["quote"][0]["close"]) if c is not None]
+    spy = {"price": m.get("regularMarketPrice"), "prev_close": m.get("chartPreviousClose"),
+           "market_time_utc": datetime.datetime.fromtimestamp(m["regularMarketTime"], datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+           "session_date": bars[0][0].date().isoformat() if bars else None, "price_1030": None}
+    # close of the 10:29 one-minute bar = last price of the first hour; only once 10:30 has passed
+    if bars and (bars[-1][0].hour, bars[-1][0].minute) >= (10, 30):
+        first_hour = [c for d, c in bars if (d.hour, d.minute) < (10, 30)]
+        spy["price_1030"] = first_hour[-1] if first_hour else None
+    out["spy_live"] = spy
+    print(f"OK  SPY live {spy['price']} vs prev close {spy['prev_close']} (10:30 price {spy['price_1030']})")
+except Exception as e:
+    print(f"WARN SPY live unavailable: {e}")
+
 out["_lastUpdated"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 out["_failedSymbols"] = failures
 

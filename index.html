@@ -371,6 +371,7 @@
       <span class="glance-label">Part II <span class="glance-question">— red day?</span></span>
       <span class="glance-value" id="glancePartIIValue">--</span>
       <span class="glance-sub" id="glancePartIIBadge">loading</span>
+      <span class="glance-sub" id="glancePartIILive" style="font-weight:500;font-size:12px;color:var(--text-muted)"></span>
     </div>
     <div class="glance-card" onclick="scrollToSection('partIHeading')">
       <span class="glance-label">Part I <span class="glance-question">— is macro cracking?</span></span>
@@ -1148,7 +1149,7 @@ function updateGlanceRow() {
   const biasBadge = document.getElementById('biasBadge');
   if (biasScore && biasBadge && biasBadge.textContent !== 'loading') {
     document.getElementById('glancePartIIValue').textContent = biasScore.textContent;
-    document.getElementById('glancePartIIBadge').textContent = biasBadge.textContent;
+    document.getElementById('glancePartIIBadge').textContent = biasBadge.textContent + (AFTER_OPEN && AFTER_OPEN.has8pm ? ' · 8pm call' : AFTER_OPEN ? ' · live re-score' : '');
     document.getElementById('glancePartIIBadge').style.color = getComputedStyle(biasBadge).color;
   }
 
@@ -1240,13 +1241,57 @@ function renderEdgeToday() {
   const s = LAST_BIAS_SCORE;
   const st = EDGE && EDGE.backtest && EDGE.backtest.stats && EDGE.backtest.stats.sgt8pm;
   const n = (x) => st ? Math.round(x * 10) : '?';
+  const lead = AFTER_OPEN && AFTER_OPEN.has8pm ? "Tonight's 8pm SGT call was" : 'Right now the score is';
   if (s > 60) {
-    el.innerHTML = 'Right now the score is <span class="big" style="color:#15803d">' + s + ' — leaning GREEN</span>. On past days like this, the market closed green about <strong>' + (st ? n(st.red_day.bull.hit) : '7–8') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to buy now.';
+    el.innerHTML = lead + ' <span class="big" style="color:#15803d">' + s + ' — leaning GREEN</span>. On past days like this, the market closed green about <strong>' + (st ? n(st.red_day.bull.hit) : '7–8') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to buy now.';
   } else if (s < 40) {
-    el.innerHTML = 'Right now the score is <span class="big" style="color:#b91c1c">' + s + ' — leaning RED</span>. On past days like this, the market closed red about <strong>' + (st ? n(st.red_day.bear.hit) : '6–7') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to short now.';
+    el.innerHTML = lead + ' <span class="big" style="color:#b91c1c">' + s + ' — leaning RED</span>. On past days like this, the market closed red about <strong>' + (st ? n(st.red_day.bear.hit) : '6–7') + ' times out of 10</strong>. That\'s the overnight move already baked in — it is not a reason to short now.';
   } else {
-    el.innerHTML = 'Right now the score is <span class="big" style="color:#b45309">' + s + ' — no call</span>. Nothing big happened overnight, so treat today like any normal day (green a bit over half the time). Check again at 10:30pm SGT.';
+    el.innerHTML = lead + ' <span class="big" style="color:#b45309">' + s + ' — no call</span>. Nothing big happened overnight, so treat today like any normal day (green a bit over half the time). Check again at 10:30pm SGT.';
   }
+  if (AFTER_OPEN) el.innerHTML += liveMoveHTML();
+}
+
+// ---- After the US open (24 Nov 2026) ------------------------------------------------
+// The score is graded at 8pm SGT. After 9:30am ET the 5-min re-score only mirrors the live
+// move, so the page keeps showing tonight's 8pm call (saved by scripts/snap8pm.py) and adds
+// the live market move: SPY vs yesterday's close, and SPY at 10:30am ET - the tested
+// one-hour-after-open check. AFTER_OPEN stays null before the open (page unchanged then).
+var AFTER_OPEN = null; // var: read by updateGlanceRow, which can run before this line is reached
+function liveMoveHTML() {
+  const A = AFTER_OPEN, L = A && A.spy;
+  const usd = v => '$' + v.toFixed(2);
+  const sgn = (v, f) => (v >= 0 ? '+' : '−') + f(Math.abs(v));
+  let h = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">';
+  if (!A.has8pm) h += '<div class="muted" style="font-size:13px;margin-bottom:6px">8pm call not recorded today (the snapshot starts tomorrow), so the number above is the live re-score, which only mirrors the live move.</div>';
+  if (L) {
+    const ch = L.price - L.prev_close, pc = ch / L.prev_close * 100;
+    h += '<div><strong>Live market move:</strong> SPY <span class="big" style="color:' + (ch >= 0 ? '#15803d' : '#b91c1c') + '">' + usd(L.price) + ' (' + sgn(ch, usd) + ', ' + sgn(pc, v => v.toFixed(2) + '%') + ')</span> vs yesterday\'s close ' + usd(L.prev_close) + '.</div>';
+    if (L.price_1030 != null) {
+      const p1 = (L.price_1030 / L.prev_close - 1) * 100;
+      const big = Math.abs(p1) > 0.5, dirTxt = p1 >= 0 ? 'GREEN' : 'RED';
+      h += '<div style="margin-top:4px"><strong>One-hour check (10:30am ET):</strong> SPY was ' + usd(L.price_1030) + ' (' + sgn(p1, v => v.toFixed(2) + '%') + ') → ' +
+        (big ? 'more than 0.5% ' + (p1 >= 0 ? 'above' : 'below') + ' the close: past days like this finished <strong>' + dirTxt + ' about 9 times out of 10</strong>.'
+             : 'within 0.5% of the close: leans ' + dirTxt.toLowerCase() + ', but only about 3 times out of 4.') + ' Tells you the day\'s colour, not the next move.</div>';
+    } else {
+      h += '<div class="muted" style="margin-top:4px">One-hour check comes at 10:30am ET (11:30pm SGT): SPY more than 0.5% above or below ' + usd(L.prev_close) + ' then finished that way about 9 times out of 10.</div>';
+    }
+  } else {
+    h += '<div class="muted">Live SPY price not in the feed yet.</div>';
+  }
+  if (A.liveScore != null && A.has8pm) h += '<div class="muted" style="margin-top:4px;font-size:13px">Live re-score now ' + A.liveScore + ' — this just mirrors the live move; it is not the tested 8pm signal.</div>';
+  return h + '</div>';
+}
+function afterOpenNow() {
+  const ny = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = new Date(Date.UTC(ny.getFullYear(), ny.getMonth(), ny.getDate()));
+  return isUsSession(day) && (ny.getHours() * 60 + ny.getMinutes()) >= 570 ? day.toISOString().slice(0, 10) : null;
+}
+async function loadSnap8pm() {
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/Moopheus1/US-Market-Shock-Monitor-2/pulse-data/data/pulse_8pm.json', { cache: 'no-store' });
+    return r.ok ? await r.json() : null;
+  } catch (e) { return null; }
 }
 
 function verdictFor(cell, base) {
@@ -1767,10 +1812,26 @@ function recomputeAndRenderBias() {
   // exactly what the Edge Tracker grades.
   if (combined.length > 0) {
     const bias = computeBiasScore(combined);
-    updateBiasBar(bias);
-    LAST_BIAS_SCORE = bias.score;
+    if (AFTER_OPEN) AFTER_OPEN.liveScore = bias.score;
+    const shown = AFTER_OPEN && AFTER_OPEN.has8pm ? AFTER_OPEN.bias8 : bias;
+    updateBiasBar(shown);
+    if (AFTER_OPEN && AFTER_OPEN.has8pm) {
+      const a = document.getElementById('biasAction');
+      a.textContent = '8pm SGT call: ' + a.textContent + ' Live re-score now ' + bias.score + ' (mirrors the live move, not the tested signal).';
+    }
+    LAST_BIAS_SCORE = shown.score;
     renderEdgeToday();
   }
+  const g = document.getElementById('glancePartIILive');
+  if (g) {
+    const L = AFTER_OPEN && AFTER_OPEN.spy;
+    if (L) {
+      const pc = (L.price / L.prev_close - 1) * 100;
+      g.textContent = 'live: SPY $' + L.price.toFixed(2) + ' (' + (pc >= 0 ? '+' : '−') + Math.abs(pc).toFixed(2) + '%)';
+      g.style.color = pc >= 0 ? 'var(--green)' : 'var(--red)';
+    } else g.textContent = '';
+  }
+  updateGlanceRow();
 }
 
 // Pulse older than this is not scored. The job fetches every 5 min, so 45 min = ~9 missed fetches.
@@ -1797,8 +1858,35 @@ function renderStaleBias(results, lastUpdated) {
   updateGlanceRow();
 }
 
+// Score a saved 8pm snapshot with the same rules the live page uses AT THAT TIME
+// (10Y left out before 8:20am ET; any input with no trade in the 2h before is left out).
+function scoreSnapshot(snap) {
+  const at = Date.parse(snap._snapAt || snap._lastUpdated);
+  const nyAt = new Date(new Date(at).toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const tnxOut = (nyAt.getHours() * 60 + nyAt.getMinutes()) < (8 * 60 + 20);
+  const res = [];
+  PREMARKET_SYMBOLS.forEach(s => {
+    if (s.ticker === '^TNX' && tnxOut) return;
+    const d = snap[YAHOO_KEY_MAP[s.ticker]];
+    if (!d || d.current == null || d.previous == null) return;
+    if (d.market_time_utc && (at - Date.parse(d.market_time_utc)) / 3600000 > 2) return;
+    res.push({ change: (d.current - d.previous) / d.previous * 100, weight: s.weight, invert: s.invert });
+  });
+  return res.length >= 5 ? computeBiasScore(res) : null;
+}
+
 async function fetchRealtime() {
   const pulseData = await loadPulseData();
+  const openDay = afterOpenNow();
+  if (openDay && pulseData) {
+    const snap = await loadSnap8pm();
+    const bias8 = snap && snap._snapSgtDate === openDay ? scoreSnapshot(snap) : null;
+    const L = pulseData.spy_live;
+    AFTER_OPEN = { has8pm: !!bias8, bias8, snapAt: snap && snap._snapAt, liveScore: null,
+      spy: (L && L.session_date === openDay && L.price && L.prev_close) ? L : null };
+  } else {
+    AFTER_OPEN = null;
+  }
   const nyNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const tnxNotYet = (nyNow.getHours() * 60 + nyNow.getMinutes()) < (8 * 60 + 20);
   const results = [];
