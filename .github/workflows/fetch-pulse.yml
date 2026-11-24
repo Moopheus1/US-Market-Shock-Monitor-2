@@ -32,6 +32,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Python packages for the moving-average panel (SPY holdings file, QQQ fallback)
+        run: pip install --quiet openpyxl yfinance || echo "pip install failed - ma_panel weights will be skipped"
+
       - name: Fetch every 5 min until 22:00 UTC (max ~5h50m per run)
         run: |
           git config user.name "github-actions[bot]"
@@ -55,6 +58,7 @@ jobs:
             # Correction watch (daily closes): first round, then hourly. Completed sessions only.
             if [ $((round % 12)) -eq 0 ]; then
               python3 scripts/correction_watch.py && cp data/correction_watch.json ../pd/data/ || echo "correction_watch.py failed this round"
+              python3 scripts/ma_panel.py ../pd/data/ma_panel.json && cp data/ma_panel.json ../pd/data/ || echo "ma_panel.py failed this round"
             fi
             round=$((round + 1))
             # Buy/sell volume proxy (24 Nov 2026, moved from v1's throttled */15 cron):
@@ -73,7 +77,7 @@ jobs:
               python3 scripts/snap8pm.py ../pd/data/pulse_8pm.json || echo "snap8pm.py failed this round"
               (
                 cd ../pd
-                git add data/pulse.json; for f in correction_watch breadth gold bitcoin pulse_8pm; do [ -f "data/$f.json" ] && git add "data/$f.json"; done; true
+                git add data/pulse.json; for f in correction_watch breadth gold bitcoin pulse_8pm ma_panel; do [ -f "data/$f.json" ] && git add "data/$f.json"; done; true
                 if ! git diff --cached --quiet; then
                   git commit -q --amend -m "Pulse update [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
                   git push -q --force origin pulse-data || echo "push failed this round"
