@@ -1844,7 +1844,7 @@ async function loadMAPanel() {
   document.getElementById('maNote').innerHTML =
     'SMA cells are green when the price is above that average, red when below. Prices are the latest daily bar from Yahoo (during US hours, today\'s bar is still forming). ' +
     '<strong>His targets are where he expects the next leg DOWN to end — he did not call them buy prices.</strong> His buy signal is the 10 SMA crossing back above the 20 after prices stop making lower lows. Targets are untested; this column tracks whether they get hit (hover a cell for his words). ' +
-    'Weights: SPY — ' + ((W.SPY && W.SPY.source) || 'n/a') + '; QQQ — ' + ((W.QQQ && W.QQQ.source) || 'n/a') + '. GOOGL shows Alphabet\'s two share classes combined' + (qPartial ? ' (*QQQ: class A only — class C is outside the top 10)' : '') + '. TSM is a foreign listing and is in neither fund; SMH is a chip ETF. ' +
+    'Weights: SPY — ' + ((W.SPY && W.SPY.source) || 'n/a') + '; QQQ — ' + ((W.QQQ && W.QQQ.source) || 'n/a') + '. GOOGL shows Alphabet\'s two share classes combined' + (qPartial ? ' (*QQQ: class A only — class C is outside the top 10)' : '') + '. TSM is a foreign listing and is in neither fund; IWM is the Russell 2000 small-cap ETF; XSP is Cboe\'s Mini-SPX index (1/10 of the S&P 500 index, so it tracks SPY closely); SMH is a chip ETF. ' +
     'Updated ' + (age < 1 ? Math.round(age * 60) + 'm' : Math.round(age) + 'h') + ' ago.';
 }
 

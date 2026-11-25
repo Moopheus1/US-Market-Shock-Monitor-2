@@ -1,6 +1,6 @@
 """Moving-average panel (KING NASDAQ method, display only) - 25 Nov 2026.
 
-For SPY, QQQ and the stocks he walks through: price, 10/20/50/100/200-day SMAs, whether
+For SPY, QQQ, IWM, XSP and the stocks he walks through: price, 10/20/50/100/200-day SMAs, whether
 his setup is on (downtrend making lower lows, a bounce into the 10 or 20 SMA that closes
 back under it), and each stock's weight in SPY and QQQ. The setup's odds are re-tested
 on SPY/QQQ history (2001-today) every day and printed next to it. Not part of any score.
@@ -12,7 +12,9 @@ import csv, datetime, io, json, os, sys, urllib.request, zoneinfo
 
 NY = zoneinfo.ZoneInfo("America/New_York")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; MarketShockMonitor/1.0)"}
-INDEXES = ["SPY", "QQQ"]
+INDEXES = ["SPY", "QQQ", "IWM", "XSP"]   # IWM (Russell 2000) and XSP (Mini-SPX) added 25 Nov 2026 - display rows only
+YAHOO = {"XSP": "^XSP"}   # XSP is a Cboe index, not an ETF: Yahoo symbol ^XSP, shown as XSP
+ODDS = ["SPY", "QQQ"]              # setup back-test stays on SPY/QQQ (what the page text describes)
 STOCKS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD", "MU", "PLTR",
           "INTC", "TSM", "SNDK", "WDC", "STX", "SMH"]
 NOW = datetime.datetime.now(datetime.timezone.utc)
@@ -167,7 +169,7 @@ if len(sys.argv) > 1 and sys.argv[1] and os.path.exists(sys.argv[1]):
 out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": [], "king_since": KING_SINCE}
 for t in INDEXES + STOCKS:
     try:
-        B, meta = bars(t)
+        B, meta = bars(YAHOO.get(t, t))
         h = [b[1] for b in B]; l = [b[2] for b in B]; c = [b[3] for b in B]; i = len(B) - 1
         s = smas(c, i)
         recent = [B[j][0] for j in range(i - 2, i + 1) if setup_on(h, l, c, j)]
@@ -177,7 +179,7 @@ for t in INDEXES + STOCKS:
                             "sma": {str(k): (round(v, 2) if v else None) for k, v in s.items()},
                             "setup_dates": recent, "cross_up_date": cross_up,
                             "low20": min(l[i - 19:i + 1]), "king": king_status(t, B),
-                            "is_etf": t in ("SPY", "QQQ", "SMH")})
+                            "is_etf": t in ("SPY", "QQQ", "IWM", "XSP", "SMH")})
         print(f"OK  {t} {c[i]:.2f}")
     except Exception as e:
         out["failed"].append(t); print(f"FAIL {t}: {e}")
@@ -201,7 +203,7 @@ else:
         print("QQQ weights failed:", e); W["QQQ"] = (prev.get("weights") or {}).get("QQQ")
     out["weights"] = W
     try:
-        out["odds"] = {t: odds(t) for t in INDEXES}
+        out["odds"] = {t: odds(t) for t in ODDS}
     except Exception as e:
         print("odds failed:", e); out["odds"] = prev.get("odds")
     out["_weightsDate"] = NOW.date().isoformat()
