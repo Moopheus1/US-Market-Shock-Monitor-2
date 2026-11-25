@@ -82,6 +82,30 @@ def smas(c, i):
     return {k: (sum(c[i - k + 1:i + 1]) / k if i >= k - 1 else None) for k in (10, 20, 50, 100, 200)}
 
 
+def weekly_rsi(B, n=14):
+    """Weekly RSI (Wilder, n weeks - TradingView's default), built from the daily bars:
+    each week's close is its last daily close (Mon-Fri, NY dates), so the current week is
+    still forming until Friday's close. Added 25 Nov 2026, display only.
+    Returns (this week's RSI, last completed week's RSI)."""
+    wk = {}
+    for d, _, _, c in B:
+        y, w, _ = datetime.date.fromisoformat(d).isocalendar()
+        wk[(y, w)] = c                      # bars are in date order, so the last one wins
+    closes = [wk[k] for k in sorted(wk)]
+    if len(closes) < n + 2:
+        return None, None
+    ch = [closes[j] - closes[j - 1] for j in range(1, len(closes))]
+    ag = sum(max(x, 0) for x in ch[:n]) / n
+    al = sum(max(-x, 0) for x in ch[:n]) / n
+    rs = lambda g, l: 100.0 if l == 0 else 100 - 100 / (1 + g / l)
+    vals = [rs(ag, al)]
+    for x in ch[n:]:
+        ag = (ag * (n - 1) + max(x, 0)) / n
+        al = (al * (n - 1) + max(-x, 0)) / n
+        vals.append(rs(ag, al))
+    return round(vals[-1], 1), round(vals[-2], 1)
+
+
 def setup_on(h, l, c, i):
     """His setup on bar i: 10 SMA below 20, close below 50, fresh 20-day low in the last
     10 bars, and the bar reached the 10 or 20 SMA but closed back under it."""
@@ -169,9 +193,10 @@ if len(sys.argv) > 1 and sys.argv[1] and os.path.exists(sys.argv[1]):
 out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": [], "king_since": KING_SINCE}
 for t in INDEXES + STOCKS:
     try:
-        B, meta = bars(YAHOO.get(t, t))
+        B, meta = bars(YAHOO.get(t, t), "5y")   # 5y (was 2y) so the weekly RSI has ~260 weeks to settle
         h = [b[1] for b in B]; l = [b[2] for b in B]; c = [b[3] for b in B]; i = len(B) - 1
         s = smas(c, i)
+        rw = weekly_rsi(B)
         recent = [B[j][0] for j in range(i - 2, i + 1) if setup_on(h, l, c, j)]
         cross_up = next((B[j][0] for j in range(i - 4, i + 1)
                          if smas(c, j)[10] > smas(c, j)[20] and smas(c, j - 1)[10] <= smas(c, j - 1)[20]), None)
@@ -179,6 +204,7 @@ for t in INDEXES + STOCKS:
                             "sma": {str(k): (round(v, 2) if v else None) for k, v in s.items()},
                             "setup_dates": recent, "cross_up_date": cross_up,
                             "low20": min(l[i - 19:i + 1]), "king": king_status(t, B),
+                            "rsi_w": rw[0], "rsi_w_prev": rw[1],
                             "is_etf": t in ("SPY", "QQQ", "IWM", "XSP", "SMH")})
         print(f"OK  {t} {c[i]:.2f}")
     except Exception as e:
