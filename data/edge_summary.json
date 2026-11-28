@@ -1,5 +1,5 @@
 {
- "_lastUpdated": "2026-11-27T04:11:55Z",
+ "_lastUpdated": "2026-11-28T03:52:45Z",
  "forward_start": "2026-09-30",
  "backtest": {
   "from": "2024-05-08",
@@ -555,7 +555,7 @@
  },
  "flow": {
   "first_logged": "2026-09-30T12:41:20Z",
-  "rows_logged": 75,
+  "rows_logged": 79,
   "preopen": {
    "colour": {
     "n": 19,
@@ -584,23 +584,39 @@
   },
   "firsthour": {
    "rest": {
-    "n": 19,
-    "hit": 0.5789473684210527,
+    "n": 20,
+    "hit": 0.55,
     "ci95": [
-     0.36275551465160105,
-     0.7685837960796962
+     0.3420820083075997,
+     0.7418049791429071
     ]
    },
    "rest_all": {
-    "n": 19,
-    "hit": 0.5263157894736842,
+    "n": 20,
+    "hit": 0.5,
     "ci95": [
-     0.31707482511825114,
-     0.7267049451255145
+     0.2992949144298199,
+     0.7007050855701801
     ]
    }
   },
   "recent": [
+   {
+    "session": "2026-11-27",
+    "run": "firsthour",
+    "net_ex0dte": -26547171,
+    "truncated": false,
+    "outcome": 0.0072746518731299226,
+    "right": false
+   },
+   {
+    "session": "2026-11-27",
+    "run": "preopen",
+    "net_ex0dte": 79237720,
+    "truncated": true,
+    "outcome": null,
+    "right": null
+   },
    {
     "session": "2026-11-25",
     "run": "firsthour",
@@ -680,22 +696,6 @@
     "truncated": false,
     "outcome": -0.003407366571503534,
     "right": false
-   },
-   {
-    "session": "2026-10-20",
-    "run": "preopen",
-    "net_ex0dte": 13419004,
-    "truncated": false,
-    "outcome": 0.0033529999343844263,
-    "right": true
-   },
-   {
-    "session": "2026-10-19",
-    "run": "firsthour",
-    "net_ex0dte": -424480,
-    "truncated": false,
-    "outcome": -0.002446776144846119,
-    "right": true
    }
   ]
  },
