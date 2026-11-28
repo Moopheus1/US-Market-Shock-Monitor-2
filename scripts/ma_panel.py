@@ -19,35 +19,52 @@ STOCKS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "AMD"
           "INTC", "TSM", "SNDK", "WDC", "STX", "SMH"]
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
-# His downside targets from the video of Mon 23 Nov 2026 ("QQQ 700 WITH A NVDA RALLY?!").
-# These are where he says the NEXT LEG DOWN goes - not buy prices. His buy signal is the
-# 10/20 SMA bullish cross after prices stop making lower lows. Logged as a forward test.
-KING_SINCE = "2026-11-23"
-KING = {
-    "QQQ":  {"kind": "price", "value": 590, "said": "bounce toward $666, then reject down toward $590 ($570-600)"},
-    "AAPL": {"kind": "sma", "value": 100, "said": "break its 20 and 50 SMAs, drop to the 100-day SMA"},
-    "MSFT": {"kind": "sma", "value": 200, "said": "break its 100 SMA, drop to the 200-day SMA"},
-    "AMZN": {"kind": "sma", "value": 200, "said": "break down through its 200-day SMA"},
-    "MU":   {"kind": "price", "value": 380, "said": "sharp leg down toward $380"},
-    "INTC": {"kind": "price", "value": 42, "said": "reject back down toward $42"},
-    "NVDA": {"kind": "none", "said": "slip back under its 10 SMA for another leg lower (no price given)"},
-    "GOOGL": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
-    "PLTR": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
-    "TSLA": {"kind": "none", "said": "break all its SMAs, another leg down (no price given)"},
-    "AVGO": {"kind": "none", "said": "keep selling off with the market (no price given)"},
-}
+# His downside targets, one dated batch per video. These are where he says the NEXT LEG DOWN goes -
+# not buy prices. His buy signal is the 10/20 SMA bullish cross after prices stop making lower lows.
+# Logged as a forward test. 28 Nov 2026: changed from a single batch to dated batches, so a newer video
+# is ADDED, never overwrites an older one - otherwise a moved target would erase the old one's record.
+# "since" = first session counted for that batch (a video posted after the close counts from the next session).
+KING_BATCHES = [
+    {"id": "23nov", "since": "2026-11-23", "video": "Mon 23 Nov 2026 video (\"QQQ 700 WITH A NVDA RALLY?!\")", "targets": {
+        "QQQ":  {"kind": "price", "value": 590, "said": "bounce toward $666, then reject down toward $590 ($570-600)"},
+        "AAPL": {"kind": "sma", "value": 100, "said": "break its 20 and 50 SMAs, drop to the 100-day SMA"},
+        "MSFT": {"kind": "sma", "value": 200, "said": "break its 100 SMA, drop to the 200-day SMA"},
+        "AMZN": {"kind": "sma", "value": 200, "said": "break down through its 200-day SMA"},
+        "MU":   {"kind": "price", "value": 380, "said": "sharp leg down toward $380"},
+        "INTC": {"kind": "price", "value": 42, "said": "reject back down toward $42"},
+        "NVDA": {"kind": "none", "said": "slip back under its 10 SMA for another leg lower (no price given)"},
+        "GOOGL": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
+        "PLTR": {"kind": "none", "said": "reject off the 10 SMA, next leg lower (no price given)"},
+        "TSLA": {"kind": "none", "said": "break all its SMAs, another leg down (no price given)"},
+        "AVGO": {"kind": "none", "said": "keep selling off with the market (no price given)"},
+    }},
+    # Video posted after the close on Fri 27 Nov 2026, so it counts from Mon 30 Nov.
+    {"id": "27nov", "since": "2026-11-30", "video": "Fri 27 Nov 2026 video (\"A 10% DROP IN QQQ SP500 & NASDAQ NEXT WEEK?\")", "targets": {
+        "QQQ":  {"kind": "price", "value": 590, "said": "reject off the 10 and 20 SMAs, next leg lower to around $590 (could tap a bit lower); bottom-building may run to about 15 Dec, then a relief rally into January"},
+        "XSP":  {"kind": "price", "value": 680, "said": "S&P 500 down to around 6,800 (XSP $680), build a bottom, push back to the 200-day SMA and reject again"},
+        "MSFT": {"kind": "sma", "value": 200, "said": "break its 100-day SMA and head to the 200-day SMA (about $445)"},
+        "AAPL": {"kind": "sma", "value": 200, "said": "lower high, lose its 50/100-day SMA and drop to the 200-day SMA, maybe by 5-10 Dec"},
+        "AMZN": {"kind": "price", "value": 215, "said": "200-day SMA won't save it, sell off hard to about $215-200"},
+        "META": {"kind": "price", "value": 531, "said": "reject at its 100-day SMA and drop to main support around $531"},
+        "TSLA": {"kind": "price", "value": 330, "said": "break its supports again, down to around $330, maybe $320"},
+        "PLTR": {"kind": "price", "value": 125, "said": "break its 200-day SMA, down to around $125"},
+        "NVDA": {"kind": "none", "said": "reject off the 10 SMA with the indexes; later the same low, a push to the 200-day SMA, then reject (no price given)"},
+        "MU":   {"kind": "none", "said": "no supports left, follows the QQQ chart lower (no price given)"},
+    }},
+]
 
 
-def king_status(t, B):
-    k = KING.get(t)
+def king_status(t, B, batch):
+    k = batch["targets"].get(t)
     if not k:
         return None
-    out = {"said": k["said"], "kind": k["kind"], "target": None, "reached_on": None}
+    out = {"batch": batch["id"], "since": batch["since"], "video": batch["video"],
+           "said": k["said"], "kind": k["kind"], "target": None, "reached_on": None}
     if k["kind"] == "none":
         return out
     c = [b[3] for b in B]
     for j in range(len(B)):
-        if B[j][0] < KING_SINCE:
+        if B[j][0] < batch["since"]:
             continue
         lvl = k["value"] if k["kind"] == "price" else (sum(c[j - k["value"] + 1:j + 1]) / k["value"] if j >= k["value"] - 1 else None)
         if lvl is not None and B[j][2] <= lvl and out["reached_on"] is None:
@@ -190,7 +207,8 @@ if len(sys.argv) > 1 and sys.argv[1] and os.path.exists(sys.argv[1]):
     except Exception:
         prev = {}
 
-out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": [], "king_since": KING_SINCE}
+out = {"_lastUpdated": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": [], "failed": [], "king_since": KING_BATCHES[0]["since"],
+       "king_batches": [{"id": b["id"], "since": b["since"], "video": b["video"]} for b in KING_BATCHES]}
 for t in INDEXES + STOCKS:
     try:
         B, meta = bars(YAHOO.get(t, t), "5y")   # 5y (was 2y) so the weekly RSI has ~260 weeks to settle
@@ -203,7 +221,8 @@ for t in INDEXES + STOCKS:
         out["rows"].append({"ticker": t, "price": c[i], "bar_date": B[i][0], "high": h[i], "low": l[i],
                             "sma": {str(k): (round(v, 2) if v else None) for k, v in s.items()},
                             "setup_dates": recent, "cross_up_date": cross_up,
-                            "low20": min(l[i - 19:i + 1]), "king": king_status(t, B),
+                            "low20": min(l[i - 19:i + 1]), "king": king_status(t, B, KING_BATCHES[0]),   # kept for older page code
+                            "kings": [king_status(t, B, b) for b in KING_BATCHES],
                             "rsi_w": rw[0], "rsi_w_prev": rw[1],
                             "is_etf": t in ("SPY", "QQQ", "IWM", "XSP", "SMH")})
         print(f"OK  {t} {c[i]:.2f}")

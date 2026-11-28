@@ -1783,16 +1783,25 @@ async function loadBTCData() {
 // =========================================================
 // MOVING-AVERAGE PANEL (25 Nov 2026) - data from scripts/ma_panel.py (pulse loop, hourly)
 // =========================================================
-function kingCell(r) {
-  const k = r.king;
-  if (!k) return '<td></td>';
+function kingCell(k, prev, price) {
+  // k = this batch's status for the ticker; prev = the earlier batch's status (to flag a moved target).
+  // 28 Nov 2026: one column per video batch, so a newer video never overwrites an older target.
+  if (!k) return '<td class="muted">—</td>';
   const tip = ' title="He said: ' + k.said.replace(/"/g, '') + '"';
-  if (k.kind === 'none') return '<td class="muted"' + tip + ' style="white-space:normal;max-width:220px">no price given</td>';
-  const gap = r.price - k.target;
-  const hit = k.reached_on ? '<span class="ma-pill bull">reached ' + k.reached_on.slice(5) + '</span>' : '<span class="ma-pill bear">not reached</span>';
-  return '<td' + tip + '>' + (k.kind === 'sma' ? k.label + ' = ' : '') + '$' + k.target.toFixed(2) + ' <span class="muted">(' + (gap >= 0 ? '$' + gap.toFixed(2) + ' above' : '$' + Math.abs(gap).toFixed(2) + ' below') + ')</span> ' + hit + '</td>';
+  const prevTxt = prev && prev.kind !== 'none' && prev.target != null
+    ? (prev.kind === 'sma' ? prev.label : '$' + prev.target.toFixed(0)) : null;
+  const curTxt = k.kind === 'none' ? null : (k.kind === 'sma' ? k.label : '$' + k.target.toFixed(0));
+  let moved = '';
+  if (prevTxt && prevTxt !== curTxt) {
+    moved = ' <span class="ma-pill setup" title="His earlier video gave ' + prevTxt + (prev.reached_on ? ', which was reached on ' + prev.reached_on : '') + '">moved from ' + prevTxt + (prev.reached_on ? ' (that one was reached ' + prev.reached_on.slice(5) + ')' : '') + '</span>';
+  }
+  if (k.kind === 'none') return '<td class="muted"' + tip + ' style="white-space:normal;max-width:220px">no price given' + moved + '</td>';
+  const gap = price - k.target;
+  const started = !k.since || new Date().toISOString().slice(0, 10) >= k.since;
+  const hit = k.reached_on ? '<span class="ma-pill bull">reached ' + k.reached_on.slice(5) + '</span>'
+    : (started ? '<span class="ma-pill bear">not reached</span>' : '<span class="ma-pill">counts from ' + k.since.slice(5) + '</span>');
+  return '<td' + tip + '>' + (k.kind === 'sma' ? k.label + ' = ' : '') + '$' + k.target.toFixed(2) + ' <span class="muted">(' + (gap >= 0 ? '$' + gap.toFixed(2) + ' above' : '$' + Math.abs(gap).toFixed(2) + ' below') + ')</span> ' + hit + moved + '</td>';
 }
-
 function rsiCell(r) {
   // Weekly RSI (25 Nov 2026): 70+ = overbought, 30 or less = oversold (standard RSI bands).
   const v = r.rsi_w, p = r.rsi_w_prev;
@@ -1835,7 +1844,10 @@ async function loadMAPanel() {
     '<div>His setup fired in the last 3 sessions on<strong>' + (rows.filter(r => r.setup_dates && r.setup_dates.length).map(r => r.ticker).join(', ') || 'none') + '</strong>(bounce into the 10/20 SMA, closed back under it)</div>';
 
   const cell = (price, v) => v == null ? '<td>--</td>' : '<td class="' + (price >= v ? 'ma-up' : 'ma-dn') + '">' + usd(v) + '</td>';
-  let h = '<tr><th>Ticker</th><th>% of SPY</th><th>% of QQQ</th><th>Price</th><th>10 SMA</th><th>20 SMA</th><th>50 SMA</th><th>100 SMA</th><th>200 SMA</th><th>Weekly RSI (14)</th><th>10 vs 20</th><th>Gap to 20 SMA</th><th>His setup</th><th>His next-leg target (23 Nov video)</th></tr>';
+  // Video batches (28 Nov 2026). Older ma_panel.json (before the pulse job picks up the new script) has only r.king.
+  const KB = (d.king_batches && d.king_batches.length ? d.king_batches : [{ id: '23nov', since: d.king_since || '2026-11-23', video: 'Mon 23 Nov 2026 video' }])
+    .map(b => Object.assign({}, b, { since_label: b.video.split(' video')[0].replace(/^\w+ /, '') + ' video' }));
+  let h = '<tr><th>Ticker</th><th>% of SPY</th><th>% of QQQ</th><th>Price</th><th>10 SMA</th><th>20 SMA</th><th>50 SMA</th><th>100 SMA</th><th>200 SMA</th><th>Weekly RSI (14)</th><th>10 vs 20</th><th>Gap to 20 SMA</th><th>His setup</th>' + KB.map(b => '<th title="' + b.video.replace(/"/g, '') + '">His next-leg target (' + b.since_label + ')</th>').join('') + '</tr>';
   rows.forEach(r => {
     const s = r.sma, bear = s['10'] != null && s['20'] != null && s['10'] < s['20'];
     const gap = s['20'] != null ? r.price - s['20'] : null;
@@ -1846,13 +1858,13 @@ async function loadMAPanel() {
     h += '<tr class="' + (r.is_etf && r.ticker !== 'SMH' ? 'ma-idx' : '') + '"><td>' + r.ticker + '</td><td>' + wS + '</td><td>' + wQ + '</td><td>' + usd(r.price) + '</td>' +
       cell(r.price, s['10']) + cell(r.price, s['20']) + cell(r.price, s['50']) + cell(r.price, s['100']) + cell(r.price, s['200']) + rsiCell(r) +
       '<td><span class="ma-pill ' + (bear ? 'bear' : 'bull') + '">' + (bear ? '10 under 20' : '10 over 20') + '</span></td>' +
-      '<td class="' + (gap >= 0 ? 'ma-up' : 'ma-dn') + '">' + (gap == null ? '--' : (gap >= 0 ? '+' : '−') + '$' + Math.abs(gap).toFixed(2)) + '</td><td>' + setup + '</td>' + kingCell(r) + '</tr>';
+      '<td class="' + (gap >= 0 ? 'ma-up' : 'ma-dn') + '">' + (gap == null ? '--' : (gap >= 0 ? '+' : '−') + '$' + Math.abs(gap).toFixed(2)) + '</td><td>' + setup + '</td>' + KB.map((b, i) => { const ks = r.kings || [r.king]; return kingCell(ks[i], i ? ks[i - 1] : null, r.price); }).join('') + '</tr>';
   });
   document.getElementById('maTable').innerHTML = h;
   const age = hoursAgo(d._lastUpdated);
   document.getElementById('maNote').innerHTML =
     'SMA cells are green when the price is above that average, red when below. Weekly RSI is the 14-week RSI (TradingView\'s default setting) on weekly closes; this week\'s value keeps moving until Friday\'s close, and the number in brackets is last week\'s final reading. 70 or above is tagged overbought, 30 or below oversold. Prices are the latest daily bar from Yahoo (during US hours, today\'s bar is still forming). ' +
-    '<strong>His targets are where he expects the next leg DOWN to end — he did not call them buy prices.</strong> His buy signal is the 10 SMA crossing back above the 20 after prices stop making lower lows. Targets are untested; this column tracks whether they get hit (hover a cell for his words). ' +
+    '<strong>His targets are where he expects the next leg DOWN to end — he did not call them buy prices.</strong> His buy signal is the 10 SMA crossing back above the 20 after prices stop making lower lows. Targets are untested; these columns track whether they get hit (hover a cell for his words). Each of his videos gets its own column, counted from the first session after it; a newer video never overwrites an older target, and a <em>moved from</em> tag shows where he changed one. ' +
     'Weights: SPY — ' + ((W.SPY && W.SPY.source) || 'n/a') + '; QQQ — ' + ((W.QQQ && W.QQQ.source) || 'n/a') + '. GOOGL shows Alphabet\'s two share classes combined' + (qPartial ? ' (*QQQ: class A only — class C is outside the top 10)' : '') + '. TSM is a foreign listing and is in neither fund; IWM is the Russell 2000 small-cap ETF; XSP is Cboe\'s Mini-SPX index (1/10 of the S&P 500 index, so it tracks SPY closely); SMH is a chip ETF. ' +
     'Updated ' + (age < 1 ? Math.round(age * 60) + 'm' : Math.round(age) + 'h') + ' ago.';
 }
